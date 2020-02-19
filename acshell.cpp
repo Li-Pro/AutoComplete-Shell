@@ -9,20 +9,53 @@ void raise(std::string errMsg, int exitCode) { std::cerr<<errMsg; exit(exitCode)
 
 void shell()
 {
-	const int TAB = 9;
-	const int BACK = 8;
-	const int RET = 13;
+	const int TAB = 9, BACK = 8, RET = 13;
+//	const int TAB = 9;
+//	const int BACK = 8;
+//	const int RET = 13;
+	
+	// TODO: Error handle
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut == INVALID_HANDLE_VALUE) exit(1);
+	
+	CONSOLE_SCREEN_BUFFER_INFO scrInfo;
+	
+//	std::cout<<GetLastError()<<'\n';
+	if (!GetConsoleScreenBufferInfo(hOut, &scrInfo))
+	{
+		std::cout<<GetLastError()<<std::endl;
+	}
+//	exit(1);
+	
+	COORD pos = scrInfo.dwCursorPosition;
+	
+	const auto writeAt = [&](std::string v, int x, int y) -> unsigned long
+	{
+		unsigned long rep = 0;
+		WriteConsoleOutputCharacter(hOut, v.c_str(), v.size(), {(short)x, (short)y}, &rep);
+		return rep;
+	};
 	
 	int key=-1, typed=0;
 	while ((key=getch()) != RET)
 	{
+		int px = pos.X+typed, py = pos.Y;
 		if (key==BACK)
 		{
 			if (typed <= 0) continue;
-			std::cout<<"<-";
+//			std::cout<<"<-";
+			writeAt(" ", px-1, py);
+			SetConsoleCursorPosition(hOut, {(short)(px-1), (short)py});
 			typed--;
 		}
-		else if (key!=TAB) std::cout<<(char)key, typed++;
+		else if (key!=TAB)
+		{
+//			std::cout<<(char)key, typed++;
+//			std::cout<<(char)key;
+			writeAt(std::string()+(char)key, px, py);
+			SetConsoleCursorPosition(hOut, {(short)(px+1), (short)py});
+			typed++;
+		}
 		// TODO: key > 26
 	}
 	
