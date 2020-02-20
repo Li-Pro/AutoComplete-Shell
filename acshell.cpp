@@ -122,6 +122,15 @@ int writeStay(char x)
 	return writeStay(std::string()+x);
 }
 
+int disFrom(COORD src, COORD at)
+{
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+	
+	int W = info.dwSize.X;
+	return (at.Y-src.Y)*W + (at.X-src.X);
+}
+
 std::string shell()
 {
 	static std::vector<std::string> shHistory;
@@ -146,31 +155,54 @@ std::string shell()
 	 *		- PGUP/PGDOWN: switch suggestion
 	 */
 	
-	shHistory.push_back({});
-	int histcnt = shHistory.size(), at = histcnt-1;
-	std::string input = shHistory[at];
-	
 	COORD oCursor = getCursor();
 	
+	shHistory.push_back({});
+	int histcnt = shHistory.size(), at = histcnt-1;
+	
+	std::string input = shHistory[at];
+	
+	const auto reWrite = [&](int clearDis)
+	{
+		COORD pos = getCursor();
+		
+		setCursor(oCursor);
+		writeStay(std::string(clearDis, ' '));
+		writeStr(input);
+		
+		setCursor(pos);
+	};
+	
+//	int inpi = 0;
 	while (true)
 	{
 		int key = getch();
 		if (key == RET) break;
 		else if (isprint(key) || key==' ')
 		{
-			writeStr(key);
-			input.push_back((char)key);
+			int inpi = disFrom(oCursor, getCursor());
 			
+			input.insert(inpi, 1, (char)key);
+			moveCursor(1); reWrite(input.size());
+//			writeStr(key);
+//			input.push_back((char)key);
+			
+			at = histcnt-1, shHistory.back() = input; //, inpi++;
 			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == BACK)
 		{
-			if (!input.size()) continue;
+//			if (!input.size()) continue;
+			int inpi = disFrom(oCursor, getCursor());
+			if (!inpi) continue;
+			else inpi--;
 			
-			moveCursor(-1);
-			writeStay(' ');
-			input.pop_back();
+			input.erase(input.begin()+inpi);
+			moveCursor(-1); reWrite(input.size()+1);
+//			writeStay(' ');
+//			input.pop_back();
 			
+			at = histcnt-1, shHistory.back() = input; //, inpi--;
 			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == TAB)
@@ -184,15 +216,12 @@ std::string shell()
 			
 			if (func==LEFT || func==RIGHT)
 			{
-				
+				moveCursor((func==LEFT? -1: 1));
 			}
 			else if (func==UP || func==DOWN)
 			{
-				if (at == histcnt-1)
-					shHistory.back() = input;
-				
 				setCursor(oCursor);
-				writeStay(std::string(' ', input.size()));
+				writeStay(std::string(input.size(), ' '));
 				
 				at += (func==UP? -1: 1);
 				at = std::max(0, std::min(histcnt-1, at));
