@@ -28,7 +28,7 @@ TCHAR peekNxt()
 	
 	TCHAR x = 0; DWORD cnt;
 	ReadConsole(hIn, &x, 1, &cnt, NULL);
-	WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), &x, 1, &cnt, NULL); // OwO
+	WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), &x, 1, &cnt, NULL);
 	SetConsoleMode(hIn, mode);
 	return x;
 }
@@ -40,7 +40,7 @@ TCHAR readNxt()
 	
 	DWORD mode;
 	GetConsoleMode(hIn, &mode);
-	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT)); // single char mode
+	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
 	
 	TCHAR x = 0; DWORD cnt;
 	ReadConsole(hIn, &x, 1, &cnt, NULL);
@@ -61,9 +61,7 @@ TCHAR sfpeekNxt()
 	DWORD N;
 	if (!PeekConsoleInput(hIn, rec, 1024, &N)) goto Error;
 	
-	std::cout<<"##: "<<N<<std::endl;
-//	if (!N) Sleep(50);
-//	else std::cout<<"##: "<<N<<std::endl;
+	if (N) std::cout<<"##: "<<N<<std::endl;
 	
 	for (int i=0;i<(int)N;i++)
 		if (rec[i].EventType == KEY_EVENT)
@@ -71,7 +69,7 @@ TCHAR sfpeekNxt()
 			KEY_EVENT_RECORD &krec = rec[i].Event.KeyEvent;
 			if (krec.bKeyDown)
 			{
-				std::cout<<"##sfpeek: "<<(int)krec.uChar.AsciiChar<<std::endl;
+//				std::cout<<"##sfpeek: "<<(int)krec.uChar.AsciiChar<<std::endl;
 				return krec.uChar.AsciiChar;
 			}
 		}
@@ -81,11 +79,11 @@ TCHAR sfpeekNxt()
 	return 0;
 }
 
+bool shell_finish;
 void shell()
 {
 	const int TAB = 9, BACK = 8, RET = 13;
 	
-	// TODO: Error handle
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE) exit(1);
 	
@@ -99,59 +97,47 @@ void shell()
 	assert(sizeof(short) == 2); // TODO
 	
 	int typed=0;
-	while (true)
+	while (!shell_finish)
 	{
 		int key=-1;
 		
 		if (GetKeyState(RET) & (1<<15)) { peekNxt(); break; }
 		CONSOLE_SCREEN_BUFFER_INFO scrInfo;
+//		if (GetKeyState(TAB) & (1<<15)) { /*std::cout<<"########"<<std::endl;*/ key = readNxt(); }
 		
-		if (sfpeekNxt() == TAB) key = readNxt();
-		else
-		{
-			key = peekNxt();
-//			if (sfpeekNxt() > 26) 
-			std::cout<<"ESESE\n";
-//			else std::cout<<"!!!!!"<<std::endl;
-		}
+		while (!(key = sfpeekNxt()));
 		
-		if (key==-1) continue;
-		std::cout<<" get: "<<key<<std::endl;
-//			key = getch();
-		if (!GetConsoleScreenBufferInfo(hOut, &scrInfo))
-			raise("Failed reading buffer info", GetLastError());
-		
-		COORD pos = scrInfo.dwCursorPosition;
-		
-		int px = pos.X, py = pos.Y;
-//		if (key == TAB)
+//		if (sfpeekNxt() == TAB) key = readNxt();
+//		else
 //		{
-//			auto tst = "TAB"; DWORD cnt;
-//			WriteConsole(hOut, tst, 3, &cnt, NULL);
+//			if (sfpeekNxt() > 26) 
+//			key = peekNxt();
+//			std::cout<<"ESESE\n";
 //		}
+		
+//		if (key==-1) continue;
+		if (key > 26)
+		{
+			assert(key == peekNxt());
+//			key = readNxt();
+			//std::cout<<" get: "<<key<<std::endl;
+		}
+		else if (key == BACK) peekNxt();
+		else std::cout<<"####\n", readNxt();
+		
+//		if (!GetConsoleScreenBufferInfo(hOut, &scrInfo))
+//			raise("Failed reading buffer info", GetLastError());
+//		
+//		COORD pos = scrInfo.dwCursorPosition;
+//		
+//		int px = pos.X, py = pos.Y;
 	}
-//	std::cout<<std::endl;
 }
 
 std::string read(std::vector<std::string> pool)
 {
-//	std::thread doShell(shell);
-	
-//	auto test = []()
-//	{
-//		while (true)
-//		{
-//			if (GetKeyState(13) & (1<<15)) break;
-//			if (GetAsyncKeyState(9) & 1) { std::cout<<"OwO"<<std::flush; }
-//		}
-//	};
-//	std::thread tst(test);
-	
-	// TODO: KeyState to peek / read
-//	while (peekNxt()!=13);
-	shell();
-	
-//	tst.join();
+#if defined(_WIN32) || defined(_WIN64)
+//	shell();
 	
 	const auto filter = [&](std::string x, std::string pat) -> bool
 	{
@@ -162,35 +148,46 @@ std::string read(std::vector<std::string> pool)
 	filter("a", "abc"); // true
 	filter("ac", "abc"); // false
 	
-	for (int i=1;i<=8;i++)
-	{
-		for (int j=8;j>=1;j--)
-			std::cout<<j;
-		std::cout<<'\n';
-	}
-	
-	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (hOut==NULL) raise("Failed retrieving hOut\n", 1);
-	
-	COORD size = {5, 5};
-	SMALL_RECT src = {0, 0, 4, 4}; // LTRB
-	
-	if (!ReadConsoleOutput(hOut, dst, size, {0, 0}, &src))
-	{
-		raise("Failed reading console output.\n", 2);
-	}
-	else
-	{
-		std::cout<<"Read: \n";
-		for (int i=0;i<size.X;i++)
-		{
-			for (int j=0;j<size.Y;j++)
-				std::cout<<dst[i*5+j].Char.AsciiChar;
-			std::cout<<'\n';
-		}
-	}
-	
+//	std::thread tshell(shell);
 	std::string v;
-	std::cin>>v;
+//	std::cin>>v;
+//	shell_finish = 1, tshell.join();
+	shell();
 	return v;
+	
+//	for (int i=1;i<=8;i++)
+//	{
+//		for (int j=8;j>=1;j--)
+//			std::cout<<j;
+//		std::cout<<'\n';
+//	}
+//	
+//	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+//	if (hOut==NULL) raise("Failed retrieving hOut\n", GetLastError());
+//	
+//	COORD size = {5, 5};
+//	SMALL_RECT src = {0, 0, 4, 4}; // LTRB
+//	
+//	if (!ReadConsoleOutput(hOut, dst, size, {0, 0}, &src))
+//	{
+//		raise("Failed reading console output.\n", GetLastError());
+//	}
+//	else
+//	{
+//		std::cout<<"Read: \n";
+//		for (int i=0;i<size.X;i++)
+//		{
+//			for (int j=0;j<size.Y;j++)
+//				std::cout<<dst[i*5+j].Char.AsciiChar;
+//			std::cout<<'\n';
+//		}
+//	}
+	
+//	std::string v;
+//	std::cin>>v;
+//	return v;
+#else
+	raise("Unsupoorted platform.\n", 1);
+	return {};
+#endif
 }
