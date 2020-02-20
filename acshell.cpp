@@ -16,15 +16,6 @@ void shell()
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE) exit(1);
 	
-//	CONSOLE_SCREEN_BUFFER_INFO scrInfo;
-//	
-//	if (!GetConsoleScreenBufferInfo(hOut, &scrInfo))
-//	{
-//		std::cout<<GetLastError()<<std::endl;
-//	}
-//	
-//	COORD pos = scrInfo.dwCursorPosition;
-	
 	const auto writeAt = [&](std::string v, int x, int y) -> unsigned long
 	{
 		unsigned long rep = 0;
@@ -64,31 +55,10 @@ void shell()
 		}
 		else
 		{
-//			const auto sendKey = [](int key, int extFlag) -> void
-//			{
-//				INPUT ip;
-//				ip.type = INPUT_KEYBOARD;
-//				ip.ki.wScan = 0;
-//				ip.ki.time = 0;
-//				ip.ki.dwExtraInfo = 0;
-//				ip.ki.wVk = key;
-//				
-//				ip.ki.dwFlags = 0 | extFlag; // key press
-//				SendInput(1, &ip, sizeof(ip));
-//				
-//				ip.ki.dwFlags = KEYEVENTF_KEYUP | extFlag;
-//				SendInput(1, &ip, sizeof(ip));
-//			};
-			
-//			int extFlag = 0;
 			if (key==0xE0)
 			{
-//				extFlag |= KEYEVENTF_EXTENDEDKEY;
 				key = getch();
-				if (key==VK_LEFT) std::cout<<"Y"<<std::flush;
-//				std::cout<<"##"<<(char)key<<' '<<std::hex<<key<<' '<<VK_LEFT<<' '<<VK_UP<<std::flush;
 			}
-//			sendKey(key, extFlag);
 		}
 		// TODO: key > 26
 	}
