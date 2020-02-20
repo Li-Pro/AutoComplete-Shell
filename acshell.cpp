@@ -166,7 +166,7 @@ std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
 	std::vector<std::string> vf;
 	
 	for (std::string &pat: v)
-		if (filter(x, pat)) vf.push_back(pat); //return pat;
+		if (filter(x, pat)) vf.push_back(pat);
 	
 	if (vf.empty()) return "";
 	
@@ -206,17 +206,43 @@ std::string shell(std::vector<std::string> suggestion={})
 	std::string input = shHistory[at];
 	std::string suggest;
 	
-	const auto reWrite = [&](int clearDis, bool reset=1)
+	const auto reClean = [&](bool reset=1)
 	{
 		COORD pos = getCursor();
-		clearDis = std::max(clearDis, (int)suggest.size());
+		
+		int len = std::max(input.size(), suggest.size());
+		setCursor(oCursor);
+		writeStay(std::string(len, ' '));
+		
+		if (reset) setCursor(pos);
+	};
+	
+	const auto reWrite = [&](bool reset=1)
+	{
+		COORD pos = getCursor();
 		
 		setCursor(oCursor);
-		writeStay(std::string(clearDis, ' '));
 		writeStr(input);
 		
 		if (reset) setCursor(pos);
 	};
+	
+	const auto refresh = [&](bool reset=1)
+	{
+		reClean(reset); reWrite(reset);
+	};
+	
+//	const auto reWrite = [&](int clearDis, bool reset=1)
+//	{
+//		COORD pos = getCursor();
+//		clearDis = std::max(clearDis, (int)suggest.size());
+//		
+//		setCursor(oCursor);
+//		writeStay(std::string(clearDis, ' '));
+//		writeStr(input);
+//		
+//		if (reset) setCursor(pos);
+//	};
 	
 	int suggest_cnt = 0;
 	while (true)
@@ -227,8 +253,9 @@ std::string shell(std::vector<std::string> suggestion={})
 		{
 			int inpi = disFrom(oCursor, getCursor());
 			
+			reClean(1);
 			input.insert(inpi, 1, (char)key);
-			moveCursor(1); reWrite(input.size());
+			moveCursor(1); reWrite(1); // reWrite(input.size());
 			
 			at = histcnt-1, shHistory.back() = input;
 			suggest_cnt = 0;
@@ -240,8 +267,9 @@ std::string shell(std::vector<std::string> suggestion={})
 			if (!inpi) continue;
 			else inpi--;
 			
+			reClean(1);
 			input.erase(input.begin()+inpi);
-			moveCursor(-1); reWrite(input.size()+1);
+			moveCursor(-1); reWrite(1); // reWrite(input.size()+1);
 			
 			at = histcnt-1, shHistory.back() = input;
 			suggest_cnt = 0;
@@ -252,7 +280,8 @@ std::string shell(std::vector<std::string> suggestion={})
 			if (suggest.empty()) continue;
 			
 			input = suggest + ' ';
-			reWrite(0, 0);
+//			reWrite(0, 0);
+//			refresh(0);
 			suggest_cnt = 0;
 		}
 		else if (key == 0xE0)
@@ -282,7 +311,7 @@ std::string shell(std::vector<std::string> suggestion={})
 			}
 		}
 		
-//		std::string x = getSuggest(input, suggestion);
+		refresh(0);
 		suggest = getSuggest(input, suggestion, suggest_cnt);
 		if (suggest.size())
 		{
