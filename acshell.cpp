@@ -45,7 +45,6 @@ void shell()
 		COORD pos = scrInfo.dwCursorPosition;
 		
 		int px = pos.X, py = pos.Y;
-//		std::cout<<std::hex<<'('<<key<<')'<<std::flush;
 		if (key==BACK)
 		{
 			if (typed <= 0) continue;
@@ -65,32 +64,31 @@ void shell()
 		}
 		else
 		{
-			const auto sendKey = [](int key, int extFlag) -> void
-			{
-//				std::cout<<"##"<<(char)key<<' '<<(char)(key^0xE0)<<std::flush;
-//				std::cout<<"#"<<extFlag<<std::flush;
-				INPUT ip;
-				ip.type = INPUT_KEYBOARD;
-				ip.ki.wScan = 0;
-				ip.ki.time = 0;
-				ip.ki.dwExtraInfo = 0;
-				ip.ki.wVk = key;
-				
-				ip.ki.dwFlags = 0 | extFlag; // key press
-				SendInput(1, &ip, sizeof(ip));
-				
-				ip.ki.dwFlags = KEYEVENTF_KEYUP | extFlag;
-				SendInput(1, &ip, sizeof(ip));
-			};
+//			const auto sendKey = [](int key, int extFlag) -> void
+//			{
+//				INPUT ip;
+//				ip.type = INPUT_KEYBOARD;
+//				ip.ki.wScan = 0;
+//				ip.ki.time = 0;
+//				ip.ki.dwExtraInfo = 0;
+//				ip.ki.wVk = key;
+//				
+//				ip.ki.dwFlags = 0 | extFlag; // key press
+//				SendInput(1, &ip, sizeof(ip));
+//				
+//				ip.ki.dwFlags = KEYEVENTF_KEYUP | extFlag;
+//				SendInput(1, &ip, sizeof(ip));
+//			};
 			
-			int extFlag = 0;
+//			int extFlag = 0;
 			if (key==0xE0)
 			{
-				extFlag |= KEYEVENTF_EXTENDEDKEY; key = getch();
+//				extFlag |= KEYEVENTF_EXTENDEDKEY;
+				key = getch();
+				if (key==VK_LEFT) std::cout<<"Y"<<std::flush;
+//				std::cout<<"##"<<(char)key<<' '<<std::hex<<key<<' '<<VK_LEFT<<' '<<VK_UP<<std::flush;
 			}
-//			std::cout<<"#####"<<std::flush;
-			sendKey(key, extFlag);
-//			sendKey('K', extFlag);
+//			sendKey(key, extFlag);
 		}
 		// TODO: key > 26
 	}
