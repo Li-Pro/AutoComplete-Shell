@@ -84,54 +84,49 @@ void shell()
 {
 	const int TAB = 9, BACK = 8, RET = 13;
 	
+	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE) exit(1);
 	
-	const auto writeAt = [&](std::string v, int x, int y) -> unsigned long
-	{
-		unsigned long rep = 0;
-		WriteConsoleOutputCharacter(hOut, v.c_str(), v.size(), {(short)x, (short)y}, &rep);
-		return rep;
-	};
+//	const auto writeAt = [&](std::string v, int x, int y) -> unsigned long
+//	{
+//		unsigned long rep = 0;
+//		WriteConsoleOutputCharacter(hOut, v.c_str(), v.size(), {(short)x, (short)y}, &rep);
+//		return rep;
+//	};
 	
 	assert(sizeof(short) == 2); // TODO
 	
+	DWORD mode;
+	GetConsoleMode(hIn, &mode);
+	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
+	
 	int typed=0;
+	std::vector<char> input;
 	while (!shell_finish)
 	{
-		int key=-1;
-		
-		if (GetKeyState(RET) & (1<<15)) { peekNxt(); break; }
-		CONSOLE_SCREEN_BUFFER_INFO scrInfo;
-//		if (GetKeyState(TAB) & (1<<15)) { /*std::cout<<"########"<<std::endl;*/ key = readNxt(); }
-		
-		while (!(key = sfpeekNxt()));
-		
-//		if (sfpeekNxt() == TAB) key = readNxt();
-//		else
-//		{
-//			if (sfpeekNxt() > 26) 
-//			key = peekNxt();
-//			std::cout<<"ESESE\n";
-//		}
-		
-//		if (key==-1) continue;
-		if (key > 26)
+		std::cout<<"#####"<<std::endl;
+		MSG msg;
+		int rep = -1;
+		while ((rep = GetMessage(&msg, NULL, 0, 0)) != 0)
 		{
-			assert(key == peekNxt());
-//			key = readNxt();
-			//std::cout<<" get: "<<key<<std::endl;
+			std::cout<<"###"<<std::endl;
+			if (rep == -1) raise("GetMessage Failed.", GetLastError());
+			
+			if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP)
+			{
+				std::cout<<"#####"<<std::endl;
+			}
+			else
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
 		}
-		else if (key == BACK) peekNxt();
-		else std::cout<<"####\n", readNxt();
-		
-//		if (!GetConsoleScreenBufferInfo(hOut, &scrInfo))
-//			raise("Failed reading buffer info", GetLastError());
-//		
-//		COORD pos = scrInfo.dwCursorPosition;
-//		
-//		int px = pos.X, py = pos.Y;
 	}
+	std::cout<<"#"<<std::endl;
+	
+	SetConsoleMode(hIn, mode);
 }
 
 std::string read(std::vector<std::string> pool)
@@ -148,11 +143,18 @@ std::string read(std::vector<std::string> pool)
 	filter("a", "abc"); // true
 	filter("ac", "abc"); // false
 	
-//	std::thread tshell(shell);
+	int key=-1;
+	while ((key=getch()))
+	{
+		if (key=='a') std::cout<<(char)8;
+		else std::cout<<(char)key;
+	}
+	
+	std::thread tshell(shell);
 	std::string v;
 //	std::cin>>v;
-//	shell_finish = 1, tshell.join();
-	shell();
+	shell_finish = 1, tshell.join();
+//	shell();
 	return v;
 	
 //	for (int i=1;i<=8;i++)
