@@ -184,25 +184,20 @@ std::string shell()
 			
 			input.insert(inpi, 1, (char)key);
 			moveCursor(1); reWrite(input.size());
-//			writeStr(key);
-//			input.push_back((char)key);
 			
-			at = histcnt-1, shHistory.back() = input; //, inpi++;
+			at = histcnt-1, shHistory.back() = input;
 			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == BACK)
 		{
-//			if (!input.size()) continue;
 			int inpi = disFrom(oCursor, getCursor());
 			if (!inpi) continue;
 			else inpi--;
 			
 			input.erase(input.begin()+inpi);
 			moveCursor(-1); reWrite(input.size()+1);
-//			writeStay(' ');
-//			input.pop_back();
 			
-			at = histcnt-1, shHistory.back() = input; //, inpi--;
+			at = histcnt-1, shHistory.back() = input;
 			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == TAB)
@@ -216,7 +211,9 @@ std::string shell()
 			
 			if (func==LEFT || func==RIGHT)
 			{
-				moveCursor((func==LEFT? -1: 1));
+				if (func==LEFT && disFrom(oCursor, getCursor())>0) moveCursor(-1);
+				if (func==RIGHT && disFrom(oCursor, getCursor())<(int)input.size()) moveCursor(1);
+//				moveCursor((func==LEFT? -1: 1));
 			}
 			else if (func==UP || func==DOWN)
 			{
