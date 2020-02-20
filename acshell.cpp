@@ -105,26 +105,27 @@ void shell()
 	std::vector<char> input;
 	while (!shell_finish)
 	{
-		std::cout<<"#####"<<std::endl;
-		MSG msg;
-		int rep = -1;
-		while ((rep = GetMessage(&msg, NULL, 0, 0)) != 0)
-		{
-			std::cout<<"###"<<std::endl;
-			if (rep == -1) raise("GetMessage Failed.", GetLastError());
-			
-			if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP)
-			{
-				std::cout<<"#####"<<std::endl;
-			}
-			else
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-		}
+//		std::cout<<"#####"<<std::endl;
+//		MSG msg;
+//		int rep = -1;
+//		while ((rep = GetMessage(&msg, NULL, 0, 0)) != 0)
+//		{
+//			std::cout<<"###"<<std::endl;
+//			if (rep == -1) raise("GetMessage Failed.", GetLastError());
+//			
+//			if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP)
+//			{
+//				std::cout<<"#####"<<std::endl;
+//			}
+//			else
+//			{
+//				TranslateMessage(&msg);
+//				DispatchMessage(&msg);
+//			}
+//		}
+		if (GetAsyncKeyState(TAB) & (1<<15)) std::cout<<(char)BACK;
 	}
-	std::cout<<"#"<<std::endl;
+//	std::cout<<"#"<<std::endl;
 	
 	SetConsoleMode(hIn, mode);
 }
@@ -143,51 +144,20 @@ std::string read(std::vector<std::string> pool)
 	filter("a", "abc"); // true
 	filter("ac", "abc"); // false
 	
-	int key=-1;
-	while ((key=getch()))
-	{
-		if (key=='a') std::cout<<(char)8;
-		else std::cout<<(char)key;
-	}
+//	int key=-1;
+//	while ((key=getch()))
+//	{
+//		if (key=='a') std::cout<<(char)8;
+//		else std::cout<<(char)key;
+//	}
 	
 	std::thread tshell(shell);
 	std::string v;
-//	std::cin>>v;
+	std::cin>>v;
 	shell_finish = 1, tshell.join();
 //	shell();
 	return v;
 	
-//	for (int i=1;i<=8;i++)
-//	{
-//		for (int j=8;j>=1;j--)
-//			std::cout<<j;
-//		std::cout<<'\n';
-//	}
-//	
-//	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-//	if (hOut==NULL) raise("Failed retrieving hOut\n", GetLastError());
-//	
-//	COORD size = {5, 5};
-//	SMALL_RECT src = {0, 0, 4, 4}; // LTRB
-//	
-//	if (!ReadConsoleOutput(hOut, dst, size, {0, 0}, &src))
-//	{
-//		raise("Failed reading console output.\n", GetLastError());
-//	}
-//	else
-//	{
-//		std::cout<<"Read: \n";
-//		for (int i=0;i<size.X;i++)
-//		{
-//			for (int j=0;j<size.Y;j++)
-//				std::cout<<dst[i*5+j].Char.AsciiChar;
-//			std::cout<<'\n';
-//		}
-//	}
-	
-//	std::string v;
-//	std::cin>>v;
-//	return v;
 #else
 	raise("Unsupoorted platform.\n", 1);
 	return {};
