@@ -3,6 +3,6 @@
 	
 	#include<iostream>
 	#include<vector>
-	void read(std::string &v, std::vector<std::string> pool);
+	std::string read(std::vector<std::string> pool);
 	
 #endif

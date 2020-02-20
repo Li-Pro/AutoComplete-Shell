@@ -5,6 +5,6 @@
 int main()
 {
 	using namespace std;
-	string v; read(v, {"apple", "auto", "ball", "balloon", "cat"});
+	string v = read({"apple", "auto", "ball", "balloon", "cat"});
 	cout<<"Result: "<<v<<'\n';
 }

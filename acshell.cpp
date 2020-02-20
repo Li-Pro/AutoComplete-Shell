@@ -1,15 +1,71 @@
+/*
+ * Copyrighted (c) 2020 Li-Pro
+ */
 #include<iostream>
 #include<windows.h>
 #include<conio.h>
+#include<thread>
 #include<cctype>
 #include<vector>
 
 CHAR_INFO dst[5*5];
 
-void raise(std::string errMsg, int exitCode) { std::cerr<<errMsg; exit(exitCode); }
+void raise(std::string errMsg, int exitCode)
+{
+	std::cerr<<errMsg; exit(exitCode);
+}
+
+void func1()
+{
+	for (int i=0;i<7;i++)
+		std::cout<<"1: "<<i<<std::endl, Sleep(123);
+}
+
+void func2()
+{
+	for (int i=0;i<7;i++)
+		std::cout<<"2: "<<i<<std::endl, Sleep(123);
+}
+
+LRESULT CALLBACK kbHook(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	std::cout<<"HOOK: "<<nCode<<std::endl;
+	while (GetMessage(NULL, NULL, 0, 0));
+	return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+bool setupHook(HHOOK &x, int type, HINSTANCE hins=NULL)
+{
+	return (x = SetWindowsHookExA(type, kbHook, hins, 0)) != NULL;
+}
+
+void releaseHook(HHOOK &x)
+{
+	UnhookWindowsHookEx(x);
+}
+
+bool hook_stop;
+void initHook()
+{
+	HHOOK hook;
+	if (!setupHook(hook, WH_KEYBOARD_LL, GetModuleHandle(NULL)))
+		raise("Failed setting up hook.", GetLastError());
+	
+	while (!hook_stop);
+	
+	releaseHook(hook);
+}
 
 void shell()
 {
+//	std::thread t1(func1);
+//	std::thread t2(func2);
+	
+//	t1.join();  t2.join();
+//	HINSTANCE hins = GetModuleHandle(NULL);
+//	if (hins==NULL) raise("", GetLastError());
+	std::thread thook(initHook);
+	
 	const int TAB = 9, BACK = 8, RET = 13;
 	
 	// TODO: Error handle
@@ -24,49 +80,53 @@ void shell()
 	};
 	
 	int key=-1, typed=0;
-	while ((key=getch()) != RET)
+	while (true)
 	{
-		CONSOLE_SCREEN_BUFFER_INFO scrInfo;
-		
-		if (!GetConsoleScreenBufferInfo(hOut, &scrInfo))
+		if (kbhit())
 		{
-			std::cout<<GetLastError()<<std::endl;
-		}
-		
-		COORD pos = scrInfo.dwCursorPosition;
-		
-		int px = pos.X, py = pos.Y;
-		if (key==BACK)
-		{
-			if (typed <= 0) continue;
-			writeAt(" ", px-1, py);
-			SetConsoleCursorPosition(hOut, {(short)(px-1), (short)py});
-			typed--;
-		}
-		else if (key==TAB)
-		{
+			if (GetKeyState(RET) & (1<<15)) break; ////////////// Mind for short's length!
+			CONSOLE_SCREEN_BUFFER_INFO scrInfo;
 			
-		}
-		else if (isprint(key))
-		{
-			writeAt(std::string()+(char)key, px, py);
-			SetConsoleCursorPosition(hOut, {(short)(px+1), (short)py});
-			typed++;
-		}
-		else
-		{
-			if (key==0xE0)
+			key = getch();
+			if (!GetConsoleScreenBufferInfo(hOut, &scrInfo))
 			{
-				key = getch();
+				std::cout<<GetLastError()<<std::endl;
 			}
+			
+			COORD pos = scrInfo.dwCursorPosition;
+			
+			int px = pos.X, py = pos.Y;
+			if (key==BACK)
+			{
+				if (typed <= 0) continue;
+				writeAt(" ", px-1, py);
+				SetConsoleCursorPosition(hOut, {(short)(px-1), (short)py});
+				typed--;
+			}
+			else if (key==TAB)
+			{
+				
+			}
+			else if (isprint(key))
+			{
+				writeAt(std::string()+(char)key, px, py);
+				SetConsoleCursorPosition(hOut, {(short)(px+1), (short)py});
+				typed++;
+			}
+			else
+			{
+				if (key==0xE0)
+				{
+					key = getch();
+				}
+			}
+			// TODO: key > 26
 		}
-		// TODO: key > 26
 	}
-	
-	if (key==RET) std::cout<<'\n';
+	std::cout<<std::endl;
 }
 
-void read(std::string &v, std::vector<std::string> pool)
+std::string read(std::vector<std::string> pool)
 {
 	shell();
 	
@@ -107,5 +167,7 @@ void read(std::string &v, std::vector<std::string> pool)
 		}
 	}
 	
+	std::string v;
 	std::cin>>v;
+	return v;
 }
