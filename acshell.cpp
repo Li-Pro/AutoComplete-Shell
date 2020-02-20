@@ -2,101 +2,19 @@
  * Copyrighted (c) 2020 Li-Pro
  */
 #include<iostream>
+#include<cassert>
+#include<cctype>
+#include<thread>
+#include<vector>
+
 #include<windows.h>
 #include<conio.h>
-#include<thread>
-#include<cctype>
-#include<vector>
 
 CHAR_INFO dst[5*5];
 
 void raise(std::string errMsg, int exitCode)
 {
 	std::cerr<<errMsg; exit(exitCode);
-}
-
-//void func1()
-//{
-//	for (int i=0;i<7;i++)
-//		std::cout<<"1: "<<i<<std::endl, Sleep(123);
-//}
-//
-//void func2()
-//{
-//	for (int i=0;i<7;i++)
-//		std::cout<<"2: "<<i<<std::endl, Sleep(123);
-//}
-
-void shell()
-{
-//	std::thread t1(func1);
-//	std::thread t2(func2);
-	
-//	t1.join();  t2.join();
-	
-	const int TAB = 9, BACK = 8, RET = 13;
-	
-	// TODO: Error handle
-	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (hOut == INVALID_HANDLE_VALUE) exit(1);
-	
-	const auto writeAt = [&](std::string v, int x, int y) -> unsigned long
-	{
-		unsigned long rep = 0;
-		WriteConsoleOutputCharacter(hOut, v.c_str(), v.size(), {(short)x, (short)y}, &rep);
-		return rep;
-	};
-	
-	int key=-1, typed=0;
-	while (true)
-	{
-		if (kbhit())
-		{
-//			exit(1);
-			
-			if (GetKeyState(RET) & (1<<15)) break; ////////////// Mind for short's length!
-//			CONSOLE_SCREEN_BUFFER_INFO scrInfo;
-			
-			if (GetKeyState(TAB) & (1<<15)) { continue; }
-			
-//			key = getch();
-//			if (!GetConsoleScreenBufferInfo(hOut, &scrInfo))
-//			{
-//				std::cout<<GetLastError()<<std::endl;
-//			}
-//			
-//			COORD pos = scrInfo.dwCursorPosition;
-//			
-//			int px = pos.X, py = pos.Y;
-//			if (key==BACK)
-//			{
-//				if (typed <= 0) continue;
-//				writeAt(" ", px-1, py);
-//				SetConsoleCursorPosition(hOut, {(short)(px-1), (short)py});
-//				typed--;
-//			}
-//			else if (key==TAB)
-//			{
-//				
-//			}
-//			else if (isprint(key))
-//			{
-//				writeAt(std::string()+(char)key, px, py);
-//				SetConsoleCursorPosition(hOut, {(short)(px+1), (short)py});
-//				typed++;
-//			}
-//			else
-//			{
-//				if (key==0xE0)
-//				{
-//					key = getch();
-//				}
-//			}
-			// TODO: key > 26
-		}
-		std::cout<<"#";
-	}
-	std::cout<<std::endl;
 }
 
 TCHAR peekNxt()
@@ -115,7 +33,7 @@ TCHAR peekNxt()
 	return x;
 }
 
-TCHAR getNxt()
+TCHAR readNxt()
 {
 	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
 	if (hIn==NULL) return 0;
@@ -130,25 +48,110 @@ TCHAR getNxt()
 	return x;
 }
 
+TCHAR sfpeekNxt()
+{
+	static INPUT_RECORD rec[1024]; //// length enough?
+	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+	if (hIn == NULL) return 0;
+	
+	DWORD mode;
+	GetConsoleMode(hIn, &mode);
+	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
+	
+	DWORD N;
+	if (!PeekConsoleInput(hIn, rec, 1024, &N)) goto Error;
+	
+	std::cout<<"##: "<<N<<std::endl;
+//	if (!N) Sleep(50);
+//	else std::cout<<"##: "<<N<<std::endl;
+	
+	for (int i=0;i<(int)N;i++)
+		if (rec[i].EventType == KEY_EVENT)
+		{
+			KEY_EVENT_RECORD &krec = rec[i].Event.KeyEvent;
+			if (krec.bKeyDown)
+			{
+				std::cout<<"##sfpeek: "<<(int)krec.uChar.AsciiChar<<std::endl;
+				return krec.uChar.AsciiChar;
+			}
+		}
+	
+	Error:
+	SetConsoleMode(hIn, mode);
+	return 0;
+}
+
+void shell()
+{
+	const int TAB = 9, BACK = 8, RET = 13;
+	
+	// TODO: Error handle
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut == INVALID_HANDLE_VALUE) exit(1);
+	
+	const auto writeAt = [&](std::string v, int x, int y) -> unsigned long
+	{
+		unsigned long rep = 0;
+		WriteConsoleOutputCharacter(hOut, v.c_str(), v.size(), {(short)x, (short)y}, &rep);
+		return rep;
+	};
+	
+	assert(sizeof(short) == 2); // TODO
+	
+	int typed=0;
+	while (true)
+	{
+		int key=-1;
+		
+		if (GetKeyState(RET) & (1<<15)) { peekNxt(); break; }
+		CONSOLE_SCREEN_BUFFER_INFO scrInfo;
+		
+		if (sfpeekNxt() == TAB) key = readNxt();
+		else
+		{
+			key = peekNxt();
+//			if (sfpeekNxt() > 26) 
+			std::cout<<"ESESE\n";
+//			else std::cout<<"!!!!!"<<std::endl;
+		}
+		
+		if (key==-1) continue;
+		std::cout<<" get: "<<key<<std::endl;
+//			key = getch();
+		if (!GetConsoleScreenBufferInfo(hOut, &scrInfo))
+			raise("Failed reading buffer info", GetLastError());
+		
+		COORD pos = scrInfo.dwCursorPosition;
+		
+		int px = pos.X, py = pos.Y;
+//		if (key == TAB)
+//		{
+//			auto tst = "TAB"; DWORD cnt;
+//			WriteConsole(hOut, tst, 3, &cnt, NULL);
+//		}
+	}
+//	std::cout<<std::endl;
+}
+
 std::string read(std::vector<std::string> pool)
 {
 //	std::thread doShell(shell);
 	
-	auto test = []()
-	{
-		while (true)
-		{
-			if (GetKeyState(13) & (1<<15)) break;
-			if (GetAsyncKeyState(9) & 1) { std::cout<<"OwO"<<std::flush; }
-//			std::cout<<"#"<<std::flush;
-		}
-	};
-	std::thread tst(test);
+//	auto test = []()
+//	{
+//		while (true)
+//		{
+//			if (GetKeyState(13) & (1<<15)) break;
+//			if (GetAsyncKeyState(9) & 1) { std::cout<<"OwO"<<std::flush; }
+//		}
+//	};
+//	std::thread tst(test);
 	
 	// TODO: KeyState to peek / read
-	while (peekNxt()!=13);
-//	doShell.join();
-	tst.join();
+//	while (peekNxt()!=13);
+	shell();
+	
+//	tst.join();
 	
 	const auto filter = [&](std::string x, std::string pat) -> bool
 	{
