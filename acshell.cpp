@@ -140,8 +140,6 @@ std::string readStr(short dis)
 	{
 		char x = 0;
 		short px = getCursor().X, py = getCursor().Y;
-//		SMALL_RECT pos = {px, py, px, py};
-//		ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), &x, {1, 1}, {0, 0}, pos);
 		DWORD cnt = 0;
 		ReadConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), &x, 1, {px, py}, &cnt);
 		
@@ -153,24 +151,27 @@ std::string readStr(short dis)
 	return sum;
 }
 
-std::string getSuggest(std::string x, std::vector<std::string> &v)
+std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
 {
 	const auto filter = [&](std::string x, std::string pat) -> bool
 	{
 		// TODO: general filter
-//		if (pat.size() < x.size()) return false;
 		if (x.size() > pat.size()) return false;
-//		std::cout<<"##filtering: "<<pat.substr(0, x.size())<<" & "<<x<<std::endl;
 		return pat.substr(0, x.size()) == x;
 	};
 	
 	writeStay("\n\n\n" + std::to_string(v.size()));
 	if (!x.size()) return "";
 	
-	for (std::string &pat: v)
-		if (filter(x, pat)) return pat;
+	std::vector<std::string> vf;
 	
-	return "";
+	for (std::string &pat: v)
+		if (filter(x, pat)) vf.push_back(pat); //return pat;
+	
+	if (vf.empty()) return "";
+	
+	cnt = std::max(0, std::min((int)vf.size()-1, cnt));
+	return vf[cnt];
 }
 
 std::string shell(std::vector<std::string> suggestion={})
@@ -203,10 +204,12 @@ std::string shell(std::vector<std::string> suggestion={})
 	int histcnt = shHistory.size(), at = histcnt-1;
 	
 	std::string input = shHistory[at];
+	std::string suggest;
 	
 	const auto reWrite = [&](int clearDis, bool reset=1)
 	{
 		COORD pos = getCursor();
+		clearDis = std::max(clearDis, (int)suggest.size());
 		
 		setCursor(oCursor);
 		writeStay(std::string(clearDis, ' '));
@@ -215,6 +218,7 @@ std::string shell(std::vector<std::string> suggestion={})
 		if (reset) setCursor(pos);
 	};
 	
+	int suggest_cnt = 0;
 	while (true)
 	{
 		int key = getch();
@@ -227,6 +231,7 @@ std::string shell(std::vector<std::string> suggestion={})
 			moveCursor(1); reWrite(input.size());
 			
 			at = histcnt-1, shHistory.back() = input;
+			suggest_cnt = 0;
 			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == BACK)
@@ -239,11 +244,16 @@ std::string shell(std::vector<std::string> suggestion={})
 			moveCursor(-1); reWrite(input.size()+1);
 			
 			at = histcnt-1, shHistory.back() = input;
+			suggest_cnt = 0;
 			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == TAB)
 		{
+			if (suggest.empty()) continue;
 			
+			input = suggest + ' ';
+			reWrite(0, 0);
+			suggest_cnt = 0;
 		}
 		else if (key == 0xE0)
 		{
@@ -268,23 +278,23 @@ std::string shell(std::vector<std::string> suggestion={})
 			}
 			else if (func==PGUP||func==PGDOWN)
 			{
-				
+				suggest_cnt += (func==PGUP? -1: 1);
 			}
 		}
 		
-		std::string x = getSuggest(input, suggestion);
-		if (x.size())
+//		std::string x = getSuggest(input, suggestion);
+		suggest = getSuggest(input, suggestion, suggest_cnt);
+		if (suggest.size())
 		{
 			int ni = input.size();
 			COORD pos = getCursor();
 			
 			setCursor(oCursor); moveCursor(input.size());
-			writeStr(x.substr(ni));
+			writeStr(suggest.substr(ni));
 			
 			setCursor(pos);
 		}
-//		writeStay("\n\nSuggest: " + x + "(" + std::to_string(suggestion.size()) + ")");
-		writeStay("\n\nSuggest: " + x);
+		writeStay("\n\nSuggest: " + suggest);
 	}
 	
 	writeStr('\n');
@@ -295,20 +305,9 @@ std::string shell(std::vector<std::string> suggestion={})
 std::string read(std::vector<std::string> pool={})
 {
 #if defined(_WIN32) || defined(_WIN64)
-	
-//	const auto filter = [&](std::string x, std::string pat) -> bool
-//	{
-//		// TODO: general filter
-//		if (pat.size() < x.size()) return false;
-//		return pat.substr(x.size()) == x;
-//	};
-//	filter("a", "abc"); // true
-//	filter("ac", "abc"); // false
-	
 	if (pool.size())
 		sort(pool.begin(), pool.end());
 	
-//	std::cout<<"pool: "<<pool.size()<<'\n';
 	for (int i=0;i<5;i++) shell(pool);
 	return shell(pool);
 	
