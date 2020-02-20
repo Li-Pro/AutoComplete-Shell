@@ -2,6 +2,7 @@
  * Copyrighted (c) 2020 Li-Pro
  */
 #include<iostream>
+#include<algorithm>
 #include<cassert>
 #include<cstring>
 #include<cctype>
@@ -49,37 +50,6 @@ TCHAR readNxt()
 	return x;
 }
 
-//TCHAR sfpeekNxt()
-//{
-//	static INPUT_RECORD rec[1024]; //// length enough?
-//	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
-//	if (hIn == NULL) return 0;
-//	
-//	DWORD mode;
-//	GetConsoleMode(hIn, &mode);
-//	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
-//	
-//	DWORD N;
-//	if (!PeekConsoleInput(hIn, rec, 1024, &N)) goto Error;
-//	
-//	if (N) std::cout<<"##: "<<N<<std::endl;
-//	
-//	for (int i=0;i<(int)N;i++)
-//		if (rec[i].EventType == KEY_EVENT)
-//		{
-//			KEY_EVENT_RECORD &krec = rec[i].Event.KeyEvent;
-//			if (krec.bKeyDown)
-//			{
-////				std::cout<<"##sfpeek: "<<(int)krec.uChar.AsciiChar<<std::endl;
-//				return krec.uChar.AsciiChar;
-//			}
-//		}
-//	
-//	Error:
-//	SetConsoleMode(hIn, mode);
-//	return 0;
-//}
-
 int writeStr(std::string v)
 {
 	DWORD rep;
@@ -96,13 +66,11 @@ COORD getCursor()
 {
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-	if (GetLastError()) raise("ERROR2", GetLastError());
 	return info.dwCursorPosition;
 }
 
 bool setCursor(short x, short y)
 {
-//	std::cout<<"##"<<x<<' '<<y<<std::endl;
 	return SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), {x, y});
 }
 
@@ -123,10 +91,8 @@ bool moveCursor(short dis)
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 	
 	COORD pos = getCursor();
-	if (GetLastError()) raise("ERROR", GetLastError());
-	int /*H = info.dwSize.Y, */W = info.dwSize.X;
+	int W = info.dwSize.X;
 	
-//	std::cout<<std::endl<<"##NOW: "<<pos.X<<' '<<pos.Y<<std::endl;
 	pos.X += dis;
 	if (pos.X<0)
 	{
@@ -156,40 +122,10 @@ int writeStay(char x)
 	return writeStay(std::string()+x);
 }
 
-//template<typename T>
-//extern std::string to_string(T);
-//
-//template
-//<typename T, typename... T2,
-// typename = typename std::enable_if<std::is_arithmetic<T>::value^1>>
-//std::string toStr(T x, T2... y)
-//{
-//	return std::string(x) + toStr(y...);
-//}
-//
-//template
-//<typename T, typename... T2,
-// typename = typename std::enable_if<std::is_arithmetic<T>::value>>
-//std::string toStr(T x, T2... y)
-//{
-//	return to_string(x) + toStr(y...);
-//}
-//
-//template<typename... T2>
-//std::string toStr(short x, T2... y)
-//{
-//	return to_string((int)x) + toStr(y...);
-//}
-//
-//template<>
-//std::string toStr()
-//{
-//	return {};
-//}
-
-//bool shell_finish;
 std::string shell()
 {
+	static std::vector<std::string> shHistory;
+	
 	const int TAB = 9, BACK = 8, RET = 13;
 	
 	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
@@ -210,7 +146,12 @@ std::string shell()
 	 *		- PGUP/PGDOWN: switch suggestion
 	 */
 	
-	std::string input;
+	shHistory.push_back({});
+	int histcnt = shHistory.size(), at = histcnt-1;
+	std::string input = shHistory[at];
+	
+	COORD oCursor = getCursor();
+	
 	while (true)
 	{
 		int key = getch();
@@ -240,11 +181,6 @@ std::string shell()
 		{
 			int func = getch();
 			const int UP=72, LEFT=75, RIGHT=77, DOWN=80, PGUP=73, PGDOWN=81;
-//			if (func==UP) std::cout<<"UP\n";
-//			else if (func==LEFT) std::cout<<"LEFT\n";
-//			else if (func==RIGHT) std::cout<<"RIGHT\n";
-//			else if (func==DOWN) std::cout<<"DOWN\n";
-//			else std::cout<<func<<std::endl;
 			
 			if (func==LEFT || func==RIGHT)
 			{
@@ -252,7 +188,17 @@ std::string shell()
 			}
 			else if (func==UP || func==DOWN)
 			{
+				if (at == histcnt-1)
+					shHistory.back() = input;
 				
+				setCursor(oCursor);
+				writeStay(std::string(' ', input.size()));
+				
+				at += (func==UP? -1: 1);
+				at = std::max(0, std::min(histcnt-1, at));
+				
+				input = shHistory[at];
+				writeStr(input);
 			}
 			else if (func==PGUP||func==PGDOWN)
 			{
@@ -261,6 +207,7 @@ std::string shell()
 		}
 	}
 	
+	writeStr('\n');
 	SetConsoleMode(hIn, mode);
 	return input;
 }
@@ -268,7 +215,6 @@ std::string shell()
 std::string read(std::vector<std::string> pool)
 {
 #if defined(_WIN32) || defined(_WIN64)
-//	shell();
 	
 	const auto filter = [&](std::string x, std::string pat) -> bool
 	{
@@ -279,12 +225,7 @@ std::string read(std::vector<std::string> pool)
 	filter("a", "abc"); // true
 	filter("ac", "abc"); // false
 	
-//	std::thread tshell(shell);
-//	std::string v;
-//	std::cin>>v;
-//	shell_finish = 1, tshell.join();
-//	shell();
-//	return v;
+	for (int i=0;i<5;i++) shell();
 	return shell();
 	
 #else
