@@ -85,7 +85,7 @@ bool moveCursor(short vx, short vy)
 	return setCursor(pos.X+vx, pos.Y+vy);
 }
 
-bool moveCursor(short dis)
+bool moveCursor(short dis) // TODO: short^2 -> int
 {
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
@@ -131,7 +131,49 @@ int disFrom(COORD src, COORD at)
 	return (at.Y-src.Y)*W + (at.X-src.X);
 }
 
-std::string shell()
+std::string readStr(short dis)
+{
+	COORD at = getCursor();
+	
+	std::string sum;
+	for (int i=0;i<dis;i++)
+	{
+		char x = 0;
+		short px = getCursor().X, py = getCursor().Y;
+//		SMALL_RECT pos = {px, py, px, py};
+//		ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), &x, {1, 1}, {0, 0}, pos);
+		DWORD cnt = 0;
+		ReadConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), &x, 1, {px, py}, &cnt);
+		
+		sum += x;
+		moveCursor(1);
+	}
+	
+	setCursor(at);
+	return sum;
+}
+
+std::string getSuggest(std::string x, std::vector<std::string> &v)
+{
+	const auto filter = [&](std::string x, std::string pat) -> bool
+	{
+		// TODO: general filter
+//		if (pat.size() < x.size()) return false;
+		if (x.size() > pat.size()) return false;
+//		std::cout<<"##filtering: "<<pat.substr(0, x.size())<<" & "<<x<<std::endl;
+		return pat.substr(0, x.size()) == x;
+	};
+	
+	writeStay("\n\n\n" + std::to_string(v.size()));
+	if (!x.size()) return "";
+	
+	for (std::string &pat: v)
+		if (filter(x, pat)) return pat;
+	
+	return "";
+}
+
+std::string shell(std::vector<std::string> suggestion={})
 {
 	static std::vector<std::string> shHistory;
 	
@@ -162,7 +204,7 @@ std::string shell()
 	
 	std::string input = shHistory[at];
 	
-	const auto reWrite = [&](int clearDis)
+	const auto reWrite = [&](int clearDis, bool reset=1)
 	{
 		COORD pos = getCursor();
 		
@@ -170,10 +212,9 @@ std::string shell()
 		writeStay(std::string(clearDis, ' '));
 		writeStr(input);
 		
-		setCursor(pos);
+		if (reset) setCursor(pos);
 	};
 	
-//	int inpi = 0;
 	while (true)
 	{
 		int key = getch();
@@ -213,7 +254,6 @@ std::string shell()
 			{
 				if (func==LEFT && disFrom(oCursor, getCursor())>0) moveCursor(-1);
 				if (func==RIGHT && disFrom(oCursor, getCursor())<(int)input.size()) moveCursor(1);
-//				moveCursor((func==LEFT? -1: 1));
 			}
 			else if (func==UP || func==DOWN)
 			{
@@ -231,6 +271,20 @@ std::string shell()
 				
 			}
 		}
+		
+		std::string x = getSuggest(input, suggestion);
+		if (x.size())
+		{
+			int ni = input.size();
+			COORD pos = getCursor();
+			
+			setCursor(oCursor); moveCursor(input.size());
+			writeStr(x.substr(ni));
+			
+			setCursor(pos);
+		}
+//		writeStay("\n\nSuggest: " + x + "(" + std::to_string(suggestion.size()) + ")");
+		writeStay("\n\nSuggest: " + x);
 	}
 	
 	writeStr('\n');
@@ -238,21 +292,25 @@ std::string shell()
 	return input;
 }
 
-std::string read(std::vector<std::string> pool)
+std::string read(std::vector<std::string> pool={})
 {
 #if defined(_WIN32) || defined(_WIN64)
 	
-	const auto filter = [&](std::string x, std::string pat) -> bool
-	{
-		// TODO: general filter
-		if (pat.size() < x.size()) return false;
-		return pat.substr(x.size()) == x;
-	};
-	filter("a", "abc"); // true
-	filter("ac", "abc"); // false
+//	const auto filter = [&](std::string x, std::string pat) -> bool
+//	{
+//		// TODO: general filter
+//		if (pat.size() < x.size()) return false;
+//		return pat.substr(x.size()) == x;
+//	};
+//	filter("a", "abc"); // true
+//	filter("ac", "abc"); // false
 	
-	for (int i=0;i<5;i++) shell();
-	return shell();
+	if (pool.size())
+		sort(pool.begin(), pool.end());
+	
+//	std::cout<<"pool: "<<pool.size()<<'\n';
+	for (int i=0;i<5;i++) shell(pool);
+	return shell(pool);
 	
 #else
 	raise("Unsupoorted platform.\n", 1);
