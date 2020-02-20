@@ -3,6 +3,7 @@
  */
 #include<iostream>
 #include<cassert>
+#include<cstring>
 #include<cctype>
 #include<thread>
 #include<vector>
@@ -94,13 +95,15 @@ int writeStr(char x)
 COORD getCursor()
 {
 	CONSOLE_SCREEN_BUFFER_INFO info;
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_INPUT_HANDLE), &info);
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+	if (GetLastError()) raise("ERROR2", GetLastError());
 	return info.dwCursorPosition;
 }
 
 bool setCursor(short x, short y)
 {
-	return SetCursorPos(x, y);
+//	std::cout<<"##"<<x<<' '<<y<<std::endl;
+	return SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), {x, y});
 }
 
 bool setCursor(COORD pos)
@@ -117,12 +120,14 @@ bool moveCursor(short vx, short vy)
 bool moveCursor(short dis)
 {
 	CONSOLE_SCREEN_BUFFER_INFO info;
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_INPUT_HANDLE), &info);
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 	
 	COORD pos = getCursor();
+	if (GetLastError()) raise("ERROR", GetLastError());
 	int /*H = info.dwSize.Y, */W = info.dwSize.X;
 	
-	pos.X -= dis;
+//	std::cout<<std::endl<<"##NOW: "<<pos.X<<' '<<pos.Y<<std::endl;
+	pos.X += dis;
 	if (pos.X<0)
 	{
 		int cnt = -pos.X/W + (pos.X%W!=0);
@@ -151,7 +156,38 @@ int writeStay(char x)
 	return writeStay(std::string()+x);
 }
 
-bool shell_finish;
+//template<typename T>
+//extern std::string to_string(T);
+//
+//template
+//<typename T, typename... T2,
+// typename = typename std::enable_if<std::is_arithmetic<T>::value^1>>
+//std::string toStr(T x, T2... y)
+//{
+//	return std::string(x) + toStr(y...);
+//}
+//
+//template
+//<typename T, typename... T2,
+// typename = typename std::enable_if<std::is_arithmetic<T>::value>>
+//std::string toStr(T x, T2... y)
+//{
+//	return to_string(x) + toStr(y...);
+//}
+//
+//template<typename... T2>
+//std::string toStr(short x, T2... y)
+//{
+//	return to_string((int)x) + toStr(y...);
+//}
+//
+//template<>
+//std::string toStr()
+//{
+//	return {};
+//}
+
+//bool shell_finish;
 std::string shell()
 {
 	const int TAB = 9, BACK = 8, RET = 13;
@@ -171,10 +207,11 @@ std::string shell()
 	 *		- Arrow U/D: view history
 	 * 		- Backspace: pop back
 	 *		- Tab: auto-complete(?)
+	 *		- PGUP/PGDOWN: switch suggestion
 	 */
 	
 	std::string input;
-	while (!shell_finish)
+	while (true)
 	{
 		int key = getch();
 		if (key == RET) break;
@@ -182,14 +219,18 @@ std::string shell()
 		{
 			writeStr(key);
 			input.push_back((char)key);
+			
+			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == BACK)
 		{
 			if (!input.size()) continue;
 			
-			std::cout<<moveCursor(-1)<<'\n';
+			moveCursor(-1);
 			writeStay(' ');
 			input.pop_back();
+			
+			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == TAB)
 		{
@@ -198,7 +239,7 @@ std::string shell()
 		else if (key == 0xE0)
 		{
 			int func = getch();
-			const int UP=72, LEFT=75, RIGHT=77, DOWN=80;
+			const int UP=72, LEFT=75, RIGHT=77, DOWN=80, PGUP=73, PGDOWN=81;
 //			if (func==UP) std::cout<<"UP\n";
 //			else if (func==LEFT) std::cout<<"LEFT\n";
 //			else if (func==RIGHT) std::cout<<"RIGHT\n";
@@ -210,6 +251,10 @@ std::string shell()
 				
 			}
 			else if (func==UP || func==DOWN)
+			{
+				
+			}
+			else if (func==PGUP||func==PGDOWN)
 			{
 				
 			}
