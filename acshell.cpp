@@ -88,13 +88,6 @@ void shell()
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE) exit(1);
 	
-//	const auto writeAt = [&](std::string v, int x, int y) -> unsigned long
-//	{
-//		unsigned long rep = 0;
-//		WriteConsoleOutputCharacter(hOut, v.c_str(), v.size(), {(short)x, (short)y}, &rep);
-//		return rep;
-//	};
-	
 	assert(sizeof(short) == 2); // TODO
 	
 	DWORD mode;
@@ -105,27 +98,8 @@ void shell()
 	std::vector<char> input;
 	while (!shell_finish)
 	{
-//		std::cout<<"#####"<<std::endl;
-//		MSG msg;
-//		int rep = -1;
-//		while ((rep = GetMessage(&msg, NULL, 0, 0)) != 0)
-//		{
-//			std::cout<<"###"<<std::endl;
-//			if (rep == -1) raise("GetMessage Failed.", GetLastError());
-//			
-//			if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP)
-//			{
-//				std::cout<<"#####"<<std::endl;
-//			}
-//			else
-//			{
-//				TranslateMessage(&msg);
-//				DispatchMessage(&msg);
-//			}
-//		}
-		if (GetAsyncKeyState(TAB) & (1<<15)) std::cout<<(char)BACK;
+		
 	}
-//	std::cout<<"#"<<std::endl;
 	
 	SetConsoleMode(hIn, mode);
 }
@@ -143,13 +117,6 @@ std::string read(std::vector<std::string> pool)
 	};
 	filter("a", "abc"); // true
 	filter("ac", "abc"); // false
-	
-//	int key=-1;
-//	while ((key=getch()))
-//	{
-//		if (key=='a') std::cout<<(char)8;
-//		else std::cout<<(char)key;
-//	}
 	
 	std::thread tshell(shell);
 	std::string v;
