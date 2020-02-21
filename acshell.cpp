@@ -160,7 +160,6 @@ std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
 		return pat.substr(0, x.size()) == x;
 	};
 	
-//	writeStay("\n\n\n" + std::to_string(v.size()));
 	if (!x.size()) return "";
 	
 	std::vector<std::string> vf;
@@ -177,7 +176,8 @@ std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
 	}
 	
 	cnt = std::max(0, std::min((int)vf.size()-1, cnt));
-	return vf[cnt];
+	return vf[cnt].substr(x.size());
+//	return vf[cnt];
 }
 
 void setTextAttrib(int attrib)
@@ -188,6 +188,22 @@ void setTextAttrib(int attrib)
 void resetTextAttrib()
 {
 	setTextAttrib(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+}
+
+std::string getLastToken(std::string v)
+{
+	std::string pattern = ", ";
+	std::string sum;
+	
+	std::reverse(v.begin(), v.end());
+	for (char x: v)
+	{
+		if (std::count(pattern.begin(), pattern.end(), x)) break;
+		else sum.push_back(x);
+	}
+	
+	std::reverse(sum.begin(), sum.end());
+	return sum;
 }
 
 std::string shell(std::vector<std::string> suggestion={})
@@ -226,7 +242,8 @@ std::string shell(std::vector<std::string> suggestion={})
 	{
 		COORD pos = getCursor();
 		
-		int len = std::max(input.size(), suggest.size());
+//		int len = std::max(input.size(), suggest.size());
+		int len = input.size() + suggest.size();
 		setCursor(oCursor);
 		writeStay(std::string(len, ' '));
 		
@@ -243,11 +260,6 @@ std::string shell(std::vector<std::string> suggestion={})
 		if (reset) setCursor(pos);
 	};
 	
-//	const auto refresh = [&](bool reset=1)
-//	{
-//		reClean(reset); reWrite(reset);
-//	};
-	
 	int suggest_cnt = 0;
 	while (true)
 	{
@@ -259,7 +271,7 @@ std::string shell(std::vector<std::string> suggestion={})
 			
 			reClean(1);
 			input.insert(inpi, 1, (char)key);
-			moveCursor(1); // reWrite(1);
+			moveCursor(1);
 			
 			at = histcnt-1, shHistory.back() = input;
 			suggest_cnt = 0;
@@ -273,7 +285,7 @@ std::string shell(std::vector<std::string> suggestion={})
 			
 			reClean(1);
 			input.erase(input.begin()+inpi);
-			moveCursor(-1); // reWrite(1);
+			moveCursor(-1);
 			
 			at = histcnt-1, shHistory.back() = input;
 			suggest_cnt = 0;
@@ -283,7 +295,8 @@ std::string shell(std::vector<std::string> suggestion={})
 		{
 			if (suggest.empty()) continue;
 			
-			input = suggest + ' ';
+//			input = suggest + ' ';
+			input = input + suggest + ' ';
 			suggest_cnt = 0;
 		}
 		else if (key == 0xE0)
@@ -313,23 +326,23 @@ std::string shell(std::vector<std::string> suggestion={})
 			}
 		}
 		
-//		refresh(0);
 		reClean(0);
-		suggest = getSuggest(input, suggestion, suggest_cnt);
+//		suggest = getSuggest(input, suggestion, suggest_cnt);
+		suggest = getSuggest(getLastToken(input), suggestion, suggest_cnt);
 		reWrite(0);
 		if (suggest.size())
 		{
-			int ni = input.size();
+//			int ni = input.size();
 			COORD pos = getCursor();
 			
 			setTextAttrib(FOREGROUND_RED | FOREGROUND_GREEN);
 			setCursor(oCursor); moveCursor(input.size());
-			writeStr(suggest.substr(ni));
+//			writeStr(suggest.substr(ni));
+			writeStr(suggest);
 			resetTextAttrib();
 			
 			setCursor(pos);
 		}
-//		writeStay("\n\nSuggest: " + suggest);
 	}
 	
 	writeStr('\n');
