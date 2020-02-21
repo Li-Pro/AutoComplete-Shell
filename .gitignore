@@ -4,7 +4,8 @@
 *.o
 *.so
 Makefile*
-build/
+build_dll/
+build_src/
 
 # Ignore build scripts.
 build.bat

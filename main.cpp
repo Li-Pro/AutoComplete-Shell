@@ -5,6 +5,6 @@
 int main()
 {
 	using namespace std;
-	string v = read({"apple", "auto", "angry", "ball", "balloon", "cat", "cool", "do", "does", "elephant"});
+	string v = runShell({"apple", "auto", "angry", "ball", "balloon", "cat", "cool", "do", "does", "elephant"});
 	cout<<"Result: "<<v<<'\n';
 }

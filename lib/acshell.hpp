@@ -1,8 +1,9 @@
 #ifndef ACShell_HPP
 #define ACShell_HPP
 	
-	#include<iostream>
+	#include<cstring>
 	#include<vector>
-	std::string read(std::vector<std::string> pool);
+	std::string runShell(std::vector<std::string> pool);
+	std::string SuperInput(std::vector<std::string> pool={});
 	
 #endif

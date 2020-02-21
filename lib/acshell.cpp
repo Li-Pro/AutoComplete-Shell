@@ -285,7 +285,8 @@ std::string shell(std::vector<std::string> suggestion={})
 		{
 			if (suggest.empty()) continue;
 			
-			input = input + suggest + ' ';
+			/* input = input + suggest + ' '; */
+			input = input + suggest;
 			suggest_cnt = 0;
 		}
 		else if (key == 0xE0)
@@ -314,6 +315,7 @@ std::string shell(std::vector<std::string> suggestion={})
 				suggest_cnt += (func==PGUP? -1: 1);
 			}
 		}
+		else std::cout<<key;
 		
 		reClean(0);
 		suggest = getSuggest(getLastToken(input), suggestion, suggest_cnt);
@@ -336,7 +338,7 @@ std::string shell(std::vector<std::string> suggestion={})
 	return input;
 }
 
-std::string read(std::vector<std::string> pool={})
+std::string runShell(std::vector<std::string> pool={})
 {
 #if defined(_WIN32) || defined(_WIN64)
 	if (pool.size())
@@ -348,4 +350,9 @@ std::string read(std::vector<std::string> pool={})
 	raise("Unsupoorted platform.\n", 1);
 	return {};
 #endif
+}
+
+std::string SuperInput(std::vector<std::string> pool={})
+{
+	return runShell(pool);
 }
