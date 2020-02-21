@@ -315,7 +315,7 @@ std::string shell(std::vector<std::string> suggestion={})
 				suggest_cnt += (func==PGUP? -1: 1);
 			}
 		}
-		else std::cout<<key;
+		else if (key==3) break;
 		
 		reClean(0);
 		suggest = getSuggest(getLastToken(input), suggestion, suggest_cnt);
