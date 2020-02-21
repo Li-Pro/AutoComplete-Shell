@@ -60,8 +60,8 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit2]
-FileName=acshell.hpp
+[Unit3]
+FileName=lib\acshell.hpp
 CompileCpp=1
 Folder=
 Compile=1
@@ -70,8 +70,8 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit3]
-FileName=acshell.cpp
+[Unit2]
+FileName=lib\acshell.cpp
 CompileCpp=1
 Folder=
 Compile=1
