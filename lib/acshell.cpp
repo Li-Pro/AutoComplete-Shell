@@ -13,7 +13,7 @@
 #include<windows.h>
 #include<conio.h>
 
-CHAR_INFO dst[5*5];
+//CHAR_INFO dst[5*5]; :D
 
 void raise(std::string errMsg, int exitCode)
 {
