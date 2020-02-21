@@ -169,12 +169,6 @@ std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
 	
 	if (vf.empty()) return "";
 	
-//	{
-//		std::string sum;
-//		for (std::string x: vf) sum = sum + x + ' ';
-//		writeStay("\n\nSuggestions: " + sum);
-//	}
-	
 	cnt = std::max(0, std::min((int)vf.size()-1, cnt));
 	return vf[cnt].substr(x.size());
 }
@@ -273,7 +267,6 @@ std::string shell(std::vector<std::string> suggestion={})
 			
 			at = histcnt-1, shHistory.back() = input;
 			suggest_cnt = 0;
-//			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == BACK)
 		{
@@ -287,7 +280,6 @@ std::string shell(std::vector<std::string> suggestion={})
 			
 			at = histcnt-1, shHistory.back() = input;
 			suggest_cnt = 0;
-//			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == TAB)
 		{
@@ -350,7 +342,6 @@ std::string read(std::vector<std::string> pool={})
 	if (pool.size())
 		sort(pool.begin(), pool.end());
 	
-//	for (int i=0;i<5;i++) shell(pool);
 	return shell(pool);
 	
 #else
