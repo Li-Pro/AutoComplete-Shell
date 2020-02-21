@@ -202,6 +202,14 @@ std::string getLastToken(std::string v)
 
 std::string shell(std::vector<std::string> suggestion={})
 {
+	/* Supported functions:
+	 * 		- Arrow L/R: move cursor
+	 *		- Arrow U/D: view history
+	 * 		- Backspace: pop back
+	 *		- Tab: auto-complete(?)
+	 *		- PGUP/PGDOWN: switch suggestion
+	 */
+	
 	static std::vector<std::string> shHistory;
 	
 	const int TAB = 9, BACK = 8, RET = 13;
@@ -215,14 +223,6 @@ std::string shell(std::vector<std::string> suggestion={})
 	DWORD mode;
 	GetConsoleMode(hIn, &mode);
 	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
-	
-	/* Supported functions:
-	 * 		- Arrow L/R: move cursor
-	 *		- Arrow U/D: view history
-	 * 		- Backspace: pop back
-	 *		- Tab: auto-complete(?)
-	 *		- PGUP/PGDOWN: switch suggestion
-	 */
 	
 	COORD oCursor = getCursor();
 	
@@ -356,16 +356,6 @@ std::string runShellUtil(std::vector<std::string> pool={})
 #endif
 }
 
-//template<typename T>
-//std::vector<T> mergeVector(std::vector<T> v1, std::vector<T> v2)
-//{
-//	std::vector<T> sum;
-//	for (T x: v1) sum.push_back(x);
-//	for (T x: v2) sum.push_back(x);
-//	return sum;
-//}
-//namespace
-//{
 std::string runShell(std::initializer_list< std::vector<std::string> > vlist={})
 {
 	typedef std::vector<std::string> vecstr;
@@ -380,17 +370,13 @@ std::string runShell(std::vector<std::string> v)
 {
 	return runShell({v});
 }
-//}
 
-//template<typename... T2>
-//std::string SuperInput(T2... pool)
 std::string SuperInput(std::initializer_list< std::vector<std::string> > vlist={})
 {
-//	return runShell(pool...);
 	return runShell(vlist);
 }
 
 std::string SuperInput(std::vector<std::string> v)
 {
-	return SuperInput({v});
+	return runShell({v});
 }
