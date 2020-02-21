@@ -2,6 +2,7 @@
  * Copyrighted (c) 2020 Li-Pro
  */
 #include<iostream>
+#include<initializer_list>
 #include<algorithm>
 #include<cassert>
 #include<cstring>
@@ -338,7 +339,7 @@ std::string shell(std::vector<std::string> suggestion={})
 	return input;
 }
 
-std::string runShell(std::vector<std::string> pool={})
+std::string runShellUtil(std::vector<std::string> pool={})
 {
 #if defined(_WIN32) || defined(_WIN64)
 	if (pool.size())
@@ -352,7 +353,76 @@ std::string runShell(std::vector<std::string> pool={})
 #endif
 }
 
-std::string SuperInput(std::vector<std::string> pool={})
+//template<typename T>
+//std::vector<T> mergeVector(std::vector<T> v1, std::vector<T> v2)
+//{
+//	std::vector<T> sum;
+//	for (T x: v1) sum.push_back(x);
+//	for (T x: v2) sum.push_back(x);
+//	return sum;
+//}
+
+//std::string runShell()
+//{
+//	return runShellUtil();
+//}
+//
+//std::string runShell(std::vector<std::string> v1)
+//{
+//	return runShellUtil(v1);
+//}
+//
+//std::string runShell(std::vector<std::string> v1, std::vector<std::string> v2)
+//{
+//	return runShellUtil(mergeVector(v1, v2));
+//}
+
+//std::string runShell(std::vector<std::string> v1, std::vector<std::string> v2, std::vector<std::string> velse)
+//{
+//	return runShell(mergeVector(v1, v2), velse...);
+//}
+
+//template
+//<typename... T/*,
+// typename = typename std::enable_if< std::is_same<T, std::vector<std::string>>::value >*/>
+//std::string runShell(T... v)
+//{
+////	typedef std::vector<std::string> vecstr;
+//	const std::vector< std::vector<std::string> > vall = {v...};
+//	std::vector<std::string> sum;
+//	for (auto vec: vall)
+//		for (auto vecx: vec) sum.push_back(vecx);
+////	return sum;
+//	return runShellUtil(sum);
+//}
+
+//std::string runShell()
+//{
+////	typedef std::vector<std::string> vecstr;
+//	const std::vector< std::vector<std::string> > vall = {v...};
+//	std::vector<std::string> sum;
+//	for (auto vec: vall)
+//		for (auto vecx: vec) sum.push_back(vecx);
+////	return sum;
+//	return runShellUtil(sum);
+//}
+
+//std::string __ = runShell(std::vector<std::string>());
+
+//template<>
+//std::string runShell(std::vector<std::string> v)
+//{
+//	return runShellUtil(v);
+//}
+//
+//template<>
+//std::string runShell()
+//{
+//	return runShellUtil();
+//}
+
+template<typename... T2>
+std::string SuperInput(T2... pool)
 {
-	return runShell(pool);
+	return runShell(pool...);
 }

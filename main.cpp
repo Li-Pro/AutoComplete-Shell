@@ -5,6 +5,9 @@
 int main()
 {
 	using namespace std;
-	string v = runShell({"apple", "auto", "angry", "ball", "balloon", "cat", "cool", "do", "does", "elephant"});
-	cout<<"Result: "<<v<<'\n';
+	vector<string> list_a = {"apple", "auto", "angry", "ball", "balloon"};
+	vector<string> list_b = {"cat", "cool", "do", "does", "elephant"};
+	
+//	string v = runShell(list_a, list_b, list_a);
+//	cout<<"Result: "<<v<<'\n';
 }
