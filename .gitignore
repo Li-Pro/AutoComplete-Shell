@@ -1,0 +1,5 @@
+# Ignore build files.
+*.exe
+*.layout
+*.o
+Makefile*
