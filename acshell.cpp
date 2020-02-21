@@ -169,15 +169,14 @@ std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
 	
 	if (vf.empty()) return "";
 	
-	{
-		std::string sum;
-		for (std::string x: vf) sum = sum + x + ' ';
-		writeStay("\n\nSuggestions: " + sum);
-	}
+//	{
+//		std::string sum;
+//		for (std::string x: vf) sum = sum + x + ' ';
+//		writeStay("\n\nSuggestions: " + sum);
+//	}
 	
 	cnt = std::max(0, std::min((int)vf.size()-1, cnt));
 	return vf[cnt].substr(x.size());
-//	return vf[cnt];
 }
 
 void setTextAttrib(int attrib)
@@ -242,7 +241,6 @@ std::string shell(std::vector<std::string> suggestion={})
 	{
 		COORD pos = getCursor();
 		
-//		int len = std::max(input.size(), suggest.size());
 		int len = input.size() + suggest.size();
 		setCursor(oCursor);
 		writeStay(std::string(len, ' '));
@@ -275,7 +273,7 @@ std::string shell(std::vector<std::string> suggestion={})
 			
 			at = histcnt-1, shHistory.back() = input;
 			suggest_cnt = 0;
-			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
+//			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == BACK)
 		{
@@ -289,13 +287,12 @@ std::string shell(std::vector<std::string> suggestion={})
 			
 			at = histcnt-1, shHistory.back() = input;
 			suggest_cnt = 0;
-			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
+//			writeStay("\nNow At: " + std::to_string(getCursor().X) + ", " + std::to_string(getCursor().Y));
 		}
 		else if (key == TAB)
 		{
 			if (suggest.empty()) continue;
 			
-//			input = suggest + ' ';
 			input = input + suggest + ' ';
 			suggest_cnt = 0;
 		}
@@ -327,17 +324,14 @@ std::string shell(std::vector<std::string> suggestion={})
 		}
 		
 		reClean(0);
-//		suggest = getSuggest(input, suggestion, suggest_cnt);
 		suggest = getSuggest(getLastToken(input), suggestion, suggest_cnt);
 		reWrite(0);
 		if (suggest.size())
 		{
-//			int ni = input.size();
 			COORD pos = getCursor();
 			
-			setTextAttrib(FOREGROUND_RED | FOREGROUND_GREEN);
+			setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 			setCursor(oCursor); moveCursor(input.size());
-//			writeStr(suggest.substr(ni));
 			writeStr(suggest);
 			resetTextAttrib();
 			
@@ -356,7 +350,7 @@ std::string read(std::vector<std::string> pool={})
 	if (pool.size())
 		sort(pool.begin(), pool.end());
 	
-	for (int i=0;i<5;i++) shell(pool);
+//	for (int i=0;i<5;i++) shell(pool);
 	return shell(pool);
 	
 #else
