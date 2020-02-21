@@ -343,7 +343,10 @@ std::string runShellUtil(std::vector<std::string> pool={})
 {
 #if defined(_WIN32) || defined(_WIN64)
 	if (pool.size())
+	{
 		sort(pool.begin(), pool.end());
+		pool.erase(std::unique(pool.begin(), pool.end()), pool.end());
+	}
 	
 	return shell(pool);
 	
@@ -361,68 +364,33 @@ std::string runShellUtil(std::vector<std::string> pool={})
 //	for (T x: v2) sum.push_back(x);
 //	return sum;
 //}
-
-//std::string runShell()
+//namespace
 //{
-//	return runShellUtil();
-//}
-//
-//std::string runShell(std::vector<std::string> v1)
-//{
-//	return runShellUtil(v1);
-//}
-//
-//std::string runShell(std::vector<std::string> v1, std::vector<std::string> v2)
-//{
-//	return runShellUtil(mergeVector(v1, v2));
-//}
-
-//std::string runShell(std::vector<std::string> v1, std::vector<std::string> v2, std::vector<std::string> velse)
-//{
-//	return runShell(mergeVector(v1, v2), velse...);
-//}
-
-//template
-//<typename... T/*,
-// typename = typename std::enable_if< std::is_same<T, std::vector<std::string>>::value >*/>
-//std::string runShell(T... v)
-//{
-////	typedef std::vector<std::string> vecstr;
-//	const std::vector< std::vector<std::string> > vall = {v...};
-//	std::vector<std::string> sum;
-//	for (auto vec: vall)
-//		for (auto vecx: vec) sum.push_back(vecx);
-////	return sum;
-//	return runShellUtil(sum);
-//}
-
-//std::string runShell()
-//{
-////	typedef std::vector<std::string> vecstr;
-//	const std::vector< std::vector<std::string> > vall = {v...};
-//	std::vector<std::string> sum;
-//	for (auto vec: vall)
-//		for (auto vecx: vec) sum.push_back(vecx);
-////	return sum;
-//	return runShellUtil(sum);
-//}
-
-//std::string __ = runShell(std::vector<std::string>());
-
-//template<>
-//std::string runShell(std::vector<std::string> v)
-//{
-//	return runShellUtil(v);
-//}
-//
-//template<>
-//std::string runShell()
-//{
-//	return runShellUtil();
-//}
-
-template<typename... T2>
-std::string SuperInput(T2... pool)
+std::string runShell(std::initializer_list< std::vector<std::string> > vlist={})
 {
-	return runShell(pool...);
+	typedef std::vector<std::string> vecstr;
+	const std::vector< vecstr > vall = vlist;
+	vecstr sum;
+	for (auto vec: vall)
+		for (auto vecx: vec) sum.push_back(vecx);
+	return runShellUtil(sum);
+}
+
+std::string runShell(std::vector<std::string> v)
+{
+	return runShell({v});
+}
+//}
+
+//template<typename... T2>
+//std::string SuperInput(T2... pool)
+std::string SuperInput(std::initializer_list< std::vector<std::string> > vlist={})
+{
+//	return runShell(pool...);
+	return runShell(vlist);
+}
+
+std::string SuperInput(std::vector<std::string> v)
+{
+	return SuperInput({v});
 }
