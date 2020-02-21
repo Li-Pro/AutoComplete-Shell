@@ -2,4 +2,9 @@
 *.exe
 *.layout
 *.o
+*.so
 Makefile*
+build/
+
+# Ignore build scripts.
+build.bat
