@@ -14,8 +14,6 @@
 #include<windows.h>
 #include<conio.h>
 
-//CHAR_INFO dst[5*5]; :D
-
 void raise(std::string errMsg, int exitCode)
 {
 	std::cerr<<errMsg; exit(exitCode);
@@ -28,7 +26,7 @@ TCHAR peekNxt()
 	
 	DWORD mode;
 	GetConsoleMode(hIn, &mode);
-	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT)); // single char mode
+	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
 	
 	TCHAR x = 0; DWORD cnt;
 	ReadConsole(hIn, &x, 1, &cnt, NULL);
@@ -153,7 +151,8 @@ std::string readStr(short dis)
 	return sum;
 }
 
-std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
+//std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
+std::vector<std::string> getSuggest(std::string x, std::vector<std::string> &v)
 {
 	const auto filter = [&](std::string x, std::string pat) -> bool
 	{
@@ -162,17 +161,19 @@ std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
 		return pat.substr(0, x.size()) == x;
 	};
 	
-	if (!x.size()) return "";
+//	if (!x.size()) return "";
+	if (!x.size()) return {};
 	
 	std::vector<std::string> vf;
 	
 	for (std::string &pat: v)
 		if (filter(x, pat)) vf.push_back(pat);
 	
-	if (vf.empty()) return "";
+	return vf;
+//	if (vf.empty()) return "";
 	
-	cnt = std::max(0, std::min((int)vf.size()-1, cnt));
-	return vf[cnt].substr(x.size());
+//	cnt = std::max(0, std::min((int)vf.size()-1, cnt));
+//	return vf[cnt].substr(x.size());
 }
 
 void setTextAttrib(int attrib)
@@ -185,9 +186,15 @@ void resetTextAttrib()
 	setTextAttrib(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
 }
 
+struct CONFIGURABLE_SETTING
+{
+	std::string DELIM{" "};
+} GLB_CONF;
+
 std::string getLastToken(std::string v)
 {
-	std::string pattern = ", ";
+//	std::string pattern = ", ";
+	std::string pattern = GLB_CONF.DELIM;
 	std::string sum;
 	
 	std::reverse(v.begin(), v.end());
@@ -228,9 +235,6 @@ std::string shell(std::vector<std::string> suggestion={}, int flavor=1)
 	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE) exit(1);
-	
-//	assert(sizeof(short) == 2); // TODO
-//	short short_mxb = MaxBit<short>::value();
 	
 	DWORD mode;
 	GetConsoleMode(hIn, &mode);
@@ -330,19 +334,33 @@ std::string shell(std::vector<std::string> suggestion={}, int flavor=1)
 		}
 		else if (key==3) break;
 		
-		reClean(0);
-		suggest = getSuggest(getLastToken(input), suggestion, suggest_cnt);
-		reWrite(0);
-		if (suggest.size())
+		reClean(0); reWrite(0);
+//		suggest = getSuggest(getLastToken(input), suggestion, suggest_cnt);
+		std::string token = getLastToken(input);
+		std::vector<std::string> vf = getSuggest(token, suggestion);
+		suggest_cnt = std::max(0, std::min((int)vf.size()-1, suggest_cnt));
+		
+		if ((flavor&1) /*&& suggest.size()*/)
 		{
-			COORD pos = getCursor();
-			
-			setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-			setCursor(oCursor); moveCursor(input.size());
-			writeStr(suggest);
-			resetTextAttrib();
-			
-			setCursor(pos);
+			if (vf.size())
+			{
+				suggest = vf[suggest_cnt].substr(token.size());
+				{
+					COORD pos = getCursor();
+					
+					setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+					setCursor(oCursor); moveCursor(input.size());
+					writeStr(suggest);
+					resetTextAttrib();
+					
+					setCursor(pos);
+				}
+			}
+			else suggest = "";
+		}
+		else if ((flavor&2))
+		{
+			suggest = "";
 		}
 	}
 	
@@ -368,9 +386,10 @@ std::string runShellUtil(std::vector<std::string> pool={}, int flavor=1)
 #endif
 }
 
-//std::string runShell(std::initializer_list< std::vector<std::string> > vlist={}, int flavor=1)
 std::string runShell(std::initializer_list< std::vector<std::string> > vlist, int flavor=1)
 {
+	GLB_CONF.DELIM = " ";
+	
 	typedef std::vector<std::string> vecstr;
 	const std::vector< vecstr > vall = vlist;
 	vecstr sum;
@@ -391,10 +410,13 @@ std::string runShell(int flavor=1)
 
 std::string SuperInput(std::initializer_list< std::vector<std::string> > vlist={})
 {
+	GLB_CONF.DELIM = ", ";
+	
 	return runShell(vlist, 1);
 }
 
 std::string SuperInput(std::vector<std::string> v)
 {
-	return runShell({v}, 1);
+	return SuperInput({v});
+//	return runShell({v}, 1);
 }
