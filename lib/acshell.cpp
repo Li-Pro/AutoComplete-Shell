@@ -7,6 +7,7 @@
 #include<cassert>
 #include<cstring>
 #include<cctype>
+#include<limits>
 #include<thread>
 #include<vector>
 
@@ -200,7 +201,17 @@ std::string getLastToken(std::string v)
 	return sum;
 }
 
-std::string shell(std::vector<std::string> suggestion={})
+template<typename T>
+struct MaxBit
+{
+	static T value()
+	{
+		T x = std::numeric_limits<T>::max();
+		return x ^ (x>>1);
+	}
+};
+
+std::string shell(std::vector<std::string> suggestion={}, int flavor=1)
 {
 	/* Supported functions:
 	 * 		- Arrow L/R: move cursor
@@ -218,7 +229,8 @@ std::string shell(std::vector<std::string> suggestion={})
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE) exit(1);
 	
-	assert(sizeof(short) == 2); // TODO
+//	assert(sizeof(short) == 2); // TODO
+//	short short_mxb = MaxBit<short>::value();
 	
 	DWORD mode;
 	GetConsoleMode(hIn, &mode);
@@ -339,7 +351,7 @@ std::string shell(std::vector<std::string> suggestion={})
 	return input;
 }
 
-std::string runShellUtil(std::vector<std::string> pool={})
+std::string runShellUtil(std::vector<std::string> pool={}, int flavor=1)
 {
 #if defined(_WIN32) || defined(_WIN64)
 	if (pool.size())
@@ -348,7 +360,7 @@ std::string runShellUtil(std::vector<std::string> pool={})
 		pool.erase(std::unique(pool.begin(), pool.end()), pool.end());
 	}
 	
-	return shell(pool);
+	return shell(pool, flavor);
 	
 #else
 	raise("Unsupoorted platform.\n", 1);
@@ -356,27 +368,33 @@ std::string runShellUtil(std::vector<std::string> pool={})
 #endif
 }
 
-std::string runShell(std::initializer_list< std::vector<std::string> > vlist={})
+//std::string runShell(std::initializer_list< std::vector<std::string> > vlist={}, int flavor=1)
+std::string runShell(std::initializer_list< std::vector<std::string> > vlist, int flavor=1)
 {
 	typedef std::vector<std::string> vecstr;
 	const std::vector< vecstr > vall = vlist;
 	vecstr sum;
 	for (auto vec: vall)
 		for (auto vecx: vec) sum.push_back(vecx);
-	return runShellUtil(sum);
+	return runShellUtil(sum, flavor);
 }
 
-std::string runShell(std::vector<std::string> v)
+std::string runShell(std::vector<std::string> v, int flavor=1)
 {
-	return runShell({v});
+	return runShell({v}, flavor);
+}
+
+std::string runShell(int flavor=1)
+{
+	return runShell({}, flavor);
 }
 
 std::string SuperInput(std::initializer_list< std::vector<std::string> > vlist={})
 {
-	return runShell(vlist);
+	return runShell(vlist, 1);
 }
 
 std::string SuperInput(std::vector<std::string> v)
 {
-	return runShell({v});
+	return runShell({v}, 1);
 }
