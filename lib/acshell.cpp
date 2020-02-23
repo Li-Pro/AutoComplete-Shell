@@ -85,7 +85,8 @@ bool moveCursor(short vx, short vy)
 	return setCursor(pos.X+vx, pos.Y+vy);
 }
 
-bool moveCursor(short dis) // TODO: short^2 -> int
+//bool moveCursor(short dis) // TODO: short^2 -> int
+bool moveCursor(int dis)
 {
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
@@ -93,19 +94,33 @@ bool moveCursor(short dis) // TODO: short^2 -> int
 	COORD pos = getCursor();
 	int W = info.dwSize.X;
 	
-	pos.X += dis;
-	if (pos.X<0)
+	int px = pos.X, py = pos.Y;
+	px += dis;
+	if (px<0)
 	{
-		int cnt = -pos.X/W + (pos.X%W!=0);
-		pos.X += W*cnt, pos.Y -= cnt;
+		int cnt = -px/W + (px%W!=0);
+		px += W*cnt, py -= cnt;
 	}
-	else if (pos.X>W)
+	else if (px>W)
 	{
-		int cnt = pos.X/W;
-		pos.X -= W*cnt, pos.Y += cnt;
+		int cnt = px/W;
+		px -= W*cnt, pos.Y += cnt;
 	}
 	
-	return setCursor(pos);
+	return setCursor(px, py);
+//	pos.X += dis;
+//	if (pos.X<0)
+//	{
+//		int cnt = -pos.X/W + (pos.X%W!=0);
+//		pos.X += W*cnt, pos.Y -= cnt;
+//	}
+//	else if (pos.X>W)
+//	{
+//		int cnt = pos.X/W;
+//		pos.X -= W*cnt, pos.Y += cnt;
+//	}
+//	
+//	return setCursor(pos);
 }
 
 int writeStay(std::string v)
@@ -151,7 +166,6 @@ std::string readStr(short dis)
 	return sum;
 }
 
-//std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
 std::vector<std::string> getSuggest(std::string x, std::vector<std::string> &v)
 {
 	const auto filter = [&](std::string x, std::string pat) -> bool
@@ -161,7 +175,6 @@ std::vector<std::string> getSuggest(std::string x, std::vector<std::string> &v)
 		return pat.substr(0, x.size()) == x;
 	};
 	
-//	if (!x.size()) return "";
 	if (!x.size()) return {};
 	
 	std::vector<std::string> vf;
@@ -170,10 +183,6 @@ std::vector<std::string> getSuggest(std::string x, std::vector<std::string> &v)
 		if (filter(x, pat)) vf.push_back(pat);
 	
 	return vf;
-//	if (vf.empty()) return "";
-	
-//	cnt = std::max(0, std::min((int)vf.size()-1, cnt));
-//	return vf[cnt].substr(x.size());
 }
 
 void setTextAttrib(int attrib)
@@ -193,7 +202,6 @@ struct CONFIGURABLE_SETTING
 
 std::string getLastToken(std::string v)
 {
-//	std::string pattern = ", ";
 	std::string pattern = GLB_CONF.DELIM;
 	std::string sum;
 	
@@ -218,7 +226,7 @@ struct MaxBit
 	}
 };
 
-std::string shell(std::vector<std::string> suggestion={}, int flavor=1)
+std::string shell(std::vector<std::string> suggestion={}/*, int flavor=1*/)
 {
 	/* Supported functions:
 	 * 		- Arrow L/R: move cursor
@@ -335,33 +343,49 @@ std::string shell(std::vector<std::string> suggestion={}, int flavor=1)
 		else if (key==3) break;
 		
 		reClean(0); reWrite(0);
-//		suggest = getSuggest(getLastToken(input), suggestion, suggest_cnt);
 		std::string token = getLastToken(input);
 		std::vector<std::string> vf = getSuggest(token, suggestion);
 		suggest_cnt = std::max(0, std::min((int)vf.size()-1, suggest_cnt));
 		
-		if ((flavor&1) /*&& suggest.size()*/)
-		{
+//		if ((flavor&1))
+//		{
 			if (vf.size())
 			{
 				suggest = vf[suggest_cnt].substr(token.size());
-				{
-					COORD pos = getCursor();
-					
-					setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-					setCursor(oCursor); moveCursor(input.size());
-					writeStr(suggest);
-					resetTextAttrib();
-					
-					setCursor(pos);
-				}
+//				{
+				COORD pos = getCursor();
+				
+				setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+				setCursor(oCursor); moveCursor(input.size());
+				writeStr(suggest);
+				resetTextAttrib();
+				
+				setCursor(pos);
+//				}
 			}
 			else suggest = "";
-		}
-		else if ((flavor&2))
-		{
-			suggest = "";
-		}
+//		}
+//		else if ((flavor&2))
+//		{
+//			if (vf.size())
+//			{
+//				suggest = vf[suggest_cnt].substr(token.size());
+//				COORD pos = getCursor();
+//				
+//				setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE);
+//				setCursor(oCursor); moveCursor(input.size());
+//				writeStr(suggest);
+//				resetTextAttrib();
+//				
+////				std::string vfsum;
+////				for (std::string x: vf) vfsum += x + ' ';
+////				writeStay('\n' + vfsum);
+//				
+//				setCursor(pos);
+//				
+//			}
+//			else suggest = "";
+//		}
 	}
 	
 	writeStr('\n');
@@ -378,7 +402,7 @@ std::string runShellUtil(std::vector<std::string> pool={}, int flavor=1)
 		pool.erase(std::unique(pool.begin(), pool.end()), pool.end());
 	}
 	
-	return shell(pool, flavor);
+	return shell(pool/*, flavor*/);
 	
 #else
 	raise("Unsupoorted platform.\n", 1);
@@ -418,5 +442,4 @@ std::string SuperInput(std::initializer_list< std::vector<std::string> > vlist={
 std::string SuperInput(std::vector<std::string> v)
 {
 	return SuperInput({v});
-//	return runShell({v}, 1);
 }

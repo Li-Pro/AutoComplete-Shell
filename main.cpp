@@ -8,6 +8,6 @@ int main()
 	vector<string> list_a = {"apple", "auto", "angry", "ball", "balloon"};
 	vector<string> list_b = {"cat", "cool", "do", "does", "elephant"};
 	
-	string v = runShell({list_a, list_b, list_a});
+	string v = runShell({list_a, list_b, list_a}, 2);
 	cout<<"Result: "<<v<<'\n';
 }
