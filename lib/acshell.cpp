@@ -2,17 +2,17 @@
  * Copyrighted (c) 2020 Li-Pro
  */
 #include<iostream>
+#include<initializer_list>
 #include<algorithm>
 #include<cassert>
 #include<cstring>
 #include<cctype>
+#include<limits>
 #include<thread>
 #include<vector>
 
 #include<windows.h>
 #include<conio.h>
-
-CHAR_INFO dst[5*5];
 
 void raise(std::string errMsg, int exitCode)
 {
@@ -26,7 +26,7 @@ TCHAR peekNxt()
 	
 	DWORD mode;
 	GetConsoleMode(hIn, &mode);
-	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT)); // single char mode
+	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
 	
 	TCHAR x = 0; DWORD cnt;
 	ReadConsole(hIn, &x, 1, &cnt, NULL);
@@ -85,7 +85,7 @@ bool moveCursor(short vx, short vy)
 	return setCursor(pos.X+vx, pos.Y+vy);
 }
 
-bool moveCursor(short dis) // TODO: short^2 -> int
+bool moveCursor(int dis)
 {
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
@@ -93,19 +93,20 @@ bool moveCursor(short dis) // TODO: short^2 -> int
 	COORD pos = getCursor();
 	int W = info.dwSize.X;
 	
-	pos.X += dis;
-	if (pos.X<0)
+	int px = pos.X, py = pos.Y;
+	px += dis;
+	if (px<0)
 	{
-		int cnt = -pos.X/W + (pos.X%W!=0);
-		pos.X += W*cnt, pos.Y -= cnt;
+		int cnt = -px/W + (px%W!=0);
+		px += W*cnt, py -= cnt;
 	}
-	else if (pos.X>W)
+	else if (px>W)
 	{
-		int cnt = pos.X/W;
-		pos.X -= W*cnt, pos.Y += cnt;
+		int cnt = px/W;
+		px -= W*cnt, pos.Y += cnt;
 	}
 	
-	return setCursor(pos);
+	return setCursor(px, py);
 }
 
 int writeStay(std::string v)
@@ -151,7 +152,7 @@ std::string readStr(short dis)
 	return sum;
 }
 
-std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
+std::vector<std::string> getSuggest(std::string x, std::vector<std::string> &v)
 {
 	const auto filter = [&](std::string x, std::string pat) -> bool
 	{
@@ -160,17 +161,14 @@ std::string getSuggest(std::string x, std::vector<std::string> &v, int &cnt)
 		return pat.substr(0, x.size()) == x;
 	};
 	
-	if (!x.size()) return "";
+	if (!x.size()) return {};
 	
 	std::vector<std::string> vf;
 	
 	for (std::string &pat: v)
 		if (filter(x, pat)) vf.push_back(pat);
 	
-	if (vf.empty()) return "";
-	
-	cnt = std::max(0, std::min((int)vf.size()-1, cnt));
-	return vf[cnt].substr(x.size());
+	return vf;
 }
 
 void setTextAttrib(int attrib)
@@ -183,9 +181,14 @@ void resetTextAttrib()
 	setTextAttrib(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
 }
 
+struct CONFIGURABLE_SETTING
+{
+	std::string DELIM{" "};
+} GLB_CONF;
+
 std::string getLastToken(std::string v)
 {
-	std::string pattern = ", ";
+	std::string pattern = GLB_CONF.DELIM;
 	std::string sum;
 	
 	std::reverse(v.begin(), v.end());
@@ -199,8 +202,26 @@ std::string getLastToken(std::string v)
 	return sum;
 }
 
+template<typename T>
+struct MaxBit
+{
+	static T value()
+	{
+		T x = std::numeric_limits<T>::max();
+		return x ^ (x>>1);
+	}
+};
+
 std::string shell(std::vector<std::string> suggestion={})
 {
+	/* Supported functions:
+	 * 		- Arrow L/R: move cursor
+	 *		- Arrow U/D: view history
+	 * 		- Backspace: pop back
+	 *		- Tab: auto-complete(?)
+	 *		- PGUP/PGDOWN: switch suggestion
+	 */
+	
 	static std::vector<std::string> shHistory;
 	
 	const int TAB = 9, BACK = 8, RET = 13;
@@ -209,19 +230,9 @@ std::string shell(std::vector<std::string> suggestion={})
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE) exit(1);
 	
-	assert(sizeof(short) == 2); // TODO
-	
 	DWORD mode;
 	GetConsoleMode(hIn, &mode);
 	SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
-	
-	/* Supported functions:
-	 * 		- Arrow L/R: move cursor
-	 *		- Arrow U/D: view history
-	 * 		- Backspace: pop back
-	 *		- Tab: auto-complete(?)
-	 *		- PGUP/PGDOWN: switch suggestion
-	 */
 	
 	COORD oCursor = getCursor();
 	
@@ -317,11 +328,14 @@ std::string shell(std::vector<std::string> suggestion={})
 		}
 		else if (key==3) break;
 		
-		reClean(0);
-		suggest = getSuggest(getLastToken(input), suggestion, suggest_cnt);
-		reWrite(0);
-		if (suggest.size())
+		reClean(0); reWrite(0);
+		std::string token = getLastToken(input);
+		std::vector<std::string> vf = getSuggest(token, suggestion);
+		suggest_cnt = std::max(0, std::min((int)vf.size()-1, suggest_cnt));
+		
+		if (vf.size())
 		{
+			suggest = vf[suggest_cnt].substr(token.size());
 			COORD pos = getCursor();
 			
 			setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
@@ -331,6 +345,7 @@ std::string shell(std::vector<std::string> suggestion={})
 			
 			setCursor(pos);
 		}
+		else suggest = "";
 	}
 	
 	writeStr('\n');
@@ -338,11 +353,14 @@ std::string shell(std::vector<std::string> suggestion={})
 	return input;
 }
 
-std::string runShell(std::vector<std::string> pool={})
+std::string runShellUtil(std::vector<std::string> pool={}, int flavor=1)
 {
 #if defined(_WIN32) || defined(_WIN64)
 	if (pool.size())
+	{
 		sort(pool.begin(), pool.end());
+		pool.erase(std::unique(pool.begin(), pool.end()), pool.end());
+	}
 	
 	return shell(pool);
 	
@@ -352,7 +370,36 @@ std::string runShell(std::vector<std::string> pool={})
 #endif
 }
 
-std::string SuperInput(std::vector<std::string> pool={})
+std::string runShell(std::initializer_list< std::vector<std::string> > vlist, int flavor=1)
 {
-	return runShell(pool);
+	GLB_CONF.DELIM = " ";
+	
+	typedef std::vector<std::string> vecstr;
+	const std::vector< vecstr > vall = vlist;
+	vecstr sum;
+	for (auto vec: vall)
+		for (auto vecx: vec) sum.push_back(vecx);
+	return runShellUtil(sum, flavor);
+}
+
+std::string runShell(std::vector<std::string> v, int flavor=1)
+{
+	return runShell({v}, flavor);
+}
+
+std::string runShell(int flavor=1)
+{
+	return runShell({}, flavor);
+}
+
+std::string SuperInput(std::initializer_list< std::vector<std::string> > vlist={})
+{
+	GLB_CONF.DELIM = ", ";
+	
+	return runShell(vlist, 1);
+}
+
+std::string SuperInput(std::vector<std::string> v)
+{
+	return SuperInput({v});
 }
