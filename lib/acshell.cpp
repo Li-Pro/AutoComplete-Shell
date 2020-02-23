@@ -85,7 +85,6 @@ bool moveCursor(short vx, short vy)
 	return setCursor(pos.X+vx, pos.Y+vy);
 }
 
-//bool moveCursor(short dis) // TODO: short^2 -> int
 bool moveCursor(int dis)
 {
 	CONSOLE_SCREEN_BUFFER_INFO info;
@@ -108,19 +107,6 @@ bool moveCursor(int dis)
 	}
 	
 	return setCursor(px, py);
-//	pos.X += dis;
-//	if (pos.X<0)
-//	{
-//		int cnt = -pos.X/W + (pos.X%W!=0);
-//		pos.X += W*cnt, pos.Y -= cnt;
-//	}
-//	else if (pos.X>W)
-//	{
-//		int cnt = pos.X/W;
-//		pos.X -= W*cnt, pos.Y += cnt;
-//	}
-//	
-//	return setCursor(pos);
 }
 
 int writeStay(std::string v)
@@ -226,7 +212,7 @@ struct MaxBit
 	}
 };
 
-std::string shell(std::vector<std::string> suggestion={}/*, int flavor=1*/)
+std::string shell(std::vector<std::string> suggestion={})
 {
 	/* Supported functions:
 	 * 		- Arrow L/R: move cursor
@@ -347,45 +333,19 @@ std::string shell(std::vector<std::string> suggestion={}/*, int flavor=1*/)
 		std::vector<std::string> vf = getSuggest(token, suggestion);
 		suggest_cnt = std::max(0, std::min((int)vf.size()-1, suggest_cnt));
 		
-//		if ((flavor&1))
-//		{
-			if (vf.size())
-			{
-				suggest = vf[suggest_cnt].substr(token.size());
-//				{
-				COORD pos = getCursor();
-				
-				setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-				setCursor(oCursor); moveCursor(input.size());
-				writeStr(suggest);
-				resetTextAttrib();
-				
-				setCursor(pos);
-//				}
-			}
-			else suggest = "";
-//		}
-//		else if ((flavor&2))
-//		{
-//			if (vf.size())
-//			{
-//				suggest = vf[suggest_cnt].substr(token.size());
-//				COORD pos = getCursor();
-//				
-//				setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE);
-//				setCursor(oCursor); moveCursor(input.size());
-//				writeStr(suggest);
-//				resetTextAttrib();
-//				
-////				std::string vfsum;
-////				for (std::string x: vf) vfsum += x + ' ';
-////				writeStay('\n' + vfsum);
-//				
-//				setCursor(pos);
-//				
-//			}
-//			else suggest = "";
-//		}
+		if (vf.size())
+		{
+			suggest = vf[suggest_cnt].substr(token.size());
+			COORD pos = getCursor();
+			
+			setTextAttrib(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+			setCursor(oCursor); moveCursor(input.size());
+			writeStr(suggest);
+			resetTextAttrib();
+			
+			setCursor(pos);
+		}
+		else suggest = "";
 	}
 	
 	writeStr('\n');
@@ -402,7 +362,7 @@ std::string runShellUtil(std::vector<std::string> pool={}, int flavor=1)
 		pool.erase(std::unique(pool.begin(), pool.end()), pool.end());
 	}
 	
-	return shell(pool/*, flavor*/);
+	return shell(pool);
 	
 #else
 	raise("Unsupoorted platform.\n", 1);
