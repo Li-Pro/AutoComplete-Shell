@@ -3,7 +3,7 @@
 
 #include "shell_base.hpp"
 
-struct ShF1: public ShellBase
+struct ShF1: ShellBase
 {
 	std::string shell(std::vector<std::string> suggestion={}) override;
 };

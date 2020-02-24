@@ -21,10 +21,14 @@
 #include "flav/shell_base.hpp"
 #include "flav/shell1.hpp"
 
+ShellBase *shells[] = { new ShF1() };
+//ShellBase shells[] = { ShF1() };
+//const std::vector<ShellBase> shells = { ShF1() };
+
 std::string runShellUtil(std::vector<std::string> pool={}, int flavor=1)
 {
 #if defined(_WIN32) || defined(_WIN64)
-	static ShellBase shells[] = { ShF1() };
+//	static /*ShellBase*/ ShF1 shells[] = { ShF1() };
 	
 	if (pool.size())
 	{
@@ -32,13 +36,12 @@ std::string runShellUtil(std::vector<std::string> pool={}, int flavor=1)
 		pool.erase(std::unique(pool.begin(), pool.end()), pool.end());
 	}
 	
-//	return shell(pool);
-	return shells[flavor-1].shell(pool);
+//	return shells[flavor-1].shell(pool);
+	return shells[flavor-1]->shell(pool);
 	
 #else
 	
 	#error Unsupported platform.
-//	raise("Unsupoorted platform.\n", 1);
 	return {};
 	
 #endif

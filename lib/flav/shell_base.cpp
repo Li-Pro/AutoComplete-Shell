@@ -5,12 +5,6 @@
 #include "shell_base.hpp"
 #include "../config/config.hpp"
 
-//struct ShellBase
-//{
-//	virtual std::string shell(std::vector<std::string> suggestion={}) { return ""; }
-//	virtual ~ShellBase() { }
-//};
-
 std::string ShellBase::shell(std::vector<std::string> suggestion) { return ""; }
 ShellBase::~ShellBase() { }
 
