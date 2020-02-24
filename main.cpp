@@ -5,6 +5,8 @@
 int main()
 {
 	using namespace std;
+	using namespace acs;
+	
 	vector<string> list_a = {"apple", "auto", "angry", "ball", "balloon"};
 	vector<string> list_b = {"cat", "cool", "do", "does", "elephant"};
 	

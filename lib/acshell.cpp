@@ -21,62 +21,61 @@
 #include "flav/shell_base.hpp"
 #include "flav/shell1.hpp"
 
-ShellBase *shells[] = { new ShF1() };
-//ShellBase shells[] = { ShF1() };
-//const std::vector<ShellBase> shells = { ShF1() };
-
-std::string runShellUtil(std::vector<std::string> pool={}, int flavor=1)
+namespace acs
 {
-#if defined(_WIN32) || defined(_WIN64)
-//	static /*ShellBase*/ ShF1 shells[] = { ShF1() };
+	ShellBase *shells[] = { new ShF1() };
 	
-	if (pool.size())
+	std::string runShellUtil(std::vector<std::string> pool={}, int flavor=1)
 	{
-		sort(pool.begin(), pool.end());
-		pool.erase(std::unique(pool.begin(), pool.end()), pool.end());
+	#if defined(_WIN32) || defined(_WIN64)
+		
+		if (pool.size())
+		{
+			sort(pool.begin(), pool.end());
+			pool.erase(std::unique(pool.begin(), pool.end()), pool.end());
+		}
+		
+		return shells[flavor-1]->shell(pool);
+		
+	#else
+		
+		#error Unsupported platform.
+		return {};
+		
+	#endif
 	}
 	
-//	return shells[flavor-1].shell(pool);
-	return shells[flavor-1]->shell(pool);
+	std::string runShell(std::initializer_list< std::vector<std::string> > vlist, int flavor=1)
+	{
+		GLB_CONF.DELIM = " ";
+		
+		typedef std::vector<std::string> vecstr;
+		const std::vector< vecstr > vall = vlist;
+		vecstr sum;
+		for (auto vec: vall)
+			for (auto vecx: vec) sum.push_back(vecx);
+		return runShellUtil(sum, flavor);
+	}
 	
-#else
+	std::string runShell(std::vector<std::string> v, int flavor=1)
+	{
+		return runShell({v}, flavor);
+	}
 	
-	#error Unsupported platform.
-	return {};
+	std::string runShell(int flavor=1)
+	{
+		return runShell({}, flavor);
+	}
 	
-#endif
-}
-
-std::string runShell(std::initializer_list< std::vector<std::string> > vlist, int flavor=1)
-{
-	GLB_CONF.DELIM = " ";
+	std::string SuperInput(std::initializer_list< std::vector<std::string> > vlist={})
+	{
+		GLB_CONF.DELIM = ", ";
+		
+		return runShell(vlist, 1);
+	}
 	
-	typedef std::vector<std::string> vecstr;
-	const std::vector< vecstr > vall = vlist;
-	vecstr sum;
-	for (auto vec: vall)
-		for (auto vecx: vec) sum.push_back(vecx);
-	return runShellUtil(sum, flavor);
-}
-
-std::string runShell(std::vector<std::string> v, int flavor=1)
-{
-	return runShell({v}, flavor);
-}
-
-std::string runShell(int flavor=1)
-{
-	return runShell({}, flavor);
-}
-
-std::string SuperInput(std::initializer_list< std::vector<std::string> > vlist={})
-{
-	GLB_CONF.DELIM = ", ";
-	
-	return runShell(vlist, 1);
-}
-
-std::string SuperInput(std::vector<std::string> v)
-{
-	return SuperInput({v});
+	std::string SuperInput(std::vector<std::string> v)
+	{
+		return SuperInput({v});
+	}
 }

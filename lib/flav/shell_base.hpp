@@ -7,9 +7,7 @@
 struct ShellBase
 {
 	virtual std::string shell(std::vector<std::string> suggestion={});
-//	virtual std::string shell(std::vector<std::string> suggestion={}) { return ""; }
 	virtual ~ShellBase();
-//	virtual ~ShellBase() { }
 };
 
 std::vector<std::string> getSuggest(std::string x, std::vector<std::string> &v);
